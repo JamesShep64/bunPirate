@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "bun": "^1.1.26",
+    "generate-unique-id": "^2.0.3",
+    "socket.io": "^4.7.5",
+    "socket.io-client": "^4.7.5",
+    "throttle-debounce": "^5.0.2"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.7",
+    "@types/throttle-debounce": "^5.0.2"
+  }
+}
