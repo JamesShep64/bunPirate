@@ -274,15 +274,24 @@ function getCurrentState() {
     return gameUpdates[gameUpdates.length - 1];
   } else {
     const baseUpdate = gameUpdates[base];
+    console.log(baseUpdate.otherGods);
     const next = gameUpdates[base + 1];
     const ratio = (serverTime - baseUpdate.time) / (next.time - baseUpdate.time);
     return {
-      me: interpolateObject(baseUpdate.me, next.me, ratio)
+      me: interpolateObject(baseUpdate.me, next.me, ratio),
+      otherGods: interpolateObjectArray(baseUpdate.otherGods, next.otherGods, ratio)
     };
   }
 }
 function interpolateObject(base, next, ratio) {
+  if (!base || !next)
+    return base;
   return { x: (next.x - base.x) * ratio + base.x, y: (next.y - base.y) * ratio + base.y };
+}
+function interpolateObjectArray(base, next, ratio) {
+  if (!base || !next)
+    return base;
+  return base.map((base2) => interpolateObject(base2, next.find((next2) => base2.id === next2.id), ratio));
 }
 var RENDER_DELAY = 100;
 var gameUpdates = [];
@@ -296,18 +305,30 @@ function setCanvasDimensions() {
   canvas.height = 1.5 * scaleRatio * window.innerHeight;
 }
 function render() {
-  const { me } = getCurrentState();
+  const { me, otherGods } = getCurrentState();
   if (!context || !me)
     return;
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.fillStyle = "red";
-  context.beginPath();
-  console.log(me.x, me.y);
-  context.arc(me.x, me.y, 100, 0, 2 * Math.PI);
-  context.fill();
+  drawGod(me.x, me.y);
+  console.log(otherGods);
+  if (!otherGods)
+    return;
+  otherGods.forEach((other) => {
+    if (!other)
+      return;
+    drawGod(other.x, other.y);
+  });
 }
 function startRendering() {
-  setInterval(render, 1000 / 500);
+  setInterval(render, 1000 / 60);
+}
+function drawGod(x, y) {
+  if (!context)
+    return;
+  context.beginPath();
+  context.arc(x, y, 100, 0, 2 * Math.PI);
+  context.fill();
 }
 var canvas = document.getElementById("game-canvas");
 var context = canvas.getContext("2d");

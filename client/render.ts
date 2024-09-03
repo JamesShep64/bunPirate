@@ -18,18 +18,29 @@ function setCanvasDimensions() {
 window.addEventListener('resize', debounce(40, setCanvasDimensions));
 function render() {
 
-	const { me } = getCurrentState();
+	const { me, otherGods } = getCurrentState();
 	if (!context || !me)
 		return;
 	context.clearRect(0, 0, canvas.width, canvas.height)
 	context.fillStyle = 'red';
-	context.beginPath();
-	console.log(me.x, me.y);
-	context.arc(me.x, me.y, 100, 0, 2 * Math.PI);
-	context.fill();
+	drawGod(me.x, me.y);
+	console.log(otherGods);
+	if (!otherGods)
+		return;
+	otherGods.forEach(other => {
+		if (!other)
+			return;
+		drawGod(other.x, other.y);
+	});
 }
 export function startRendering() {
-
-	setInterval(render, 1000 / 500);
+	setInterval(render, 1000 / 60);
+}
+function drawGod(x: number, y: number) {
+	if (!context)
+		return;
+	context.beginPath();
+	context.arc(x, y, 100, 0, 2 * Math.PI);
+	context.fill();
 }
 

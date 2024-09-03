@@ -25,10 +25,12 @@ export class Game {
 
   }
   createUpdate(id: string) {
+    const otherGods = Object.keys(this.gods).filter((key: string) => key !== id).map((key) => this.gods[key]);
     sendUpdate(id,
       {
         time: Date.now(),
-        me: this.gods[id].serializeForUpdate()
+        me: this.gods[id].serializeForUpdate(),
+        otherGods: otherGods.map((god) => god.serializeForUpdate()),
       });
 
   }

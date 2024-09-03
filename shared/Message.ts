@@ -37,4 +37,10 @@ export interface mouseMove {
 export interface gameUpdate {
 	time: number;
 	me: godUpdate;
+	otherGods: godUpdate[];
+}
+export interface objectUpdate {
+	id: string;
+	x: number;
+	y: number;
 }

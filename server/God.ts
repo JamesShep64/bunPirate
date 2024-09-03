@@ -1,3 +1,4 @@
+import { objectUpdate } from "../shared/Message";
 import { Vector } from "./Vector";
 
 export class God {
@@ -15,12 +16,11 @@ export class God {
 
 	serializeForUpdate() {
 		return {
+			id: this.id,
 			x: this.pos.x,
 			y: this.pos.y
 		}
 	}
 }
-export interface godUpdate {
-	x: number,
-	y: number
+export interface godUpdate extends objectUpdate {
 }
