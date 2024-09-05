@@ -34,5 +34,7 @@ export const Constants = {
     MOUSE_MOVE: 'mouse move',
     MOUSE_CLICK: 'mouse click',
     GOD_COMMAND: 'text entered',
+    KEY_DOWN: 'key pressed',
+    KEY_UP: 'key up'
   }
 };

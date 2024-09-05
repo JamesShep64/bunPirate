@@ -36,6 +36,9 @@ export interface mouseEvent {
 	x: number;
 	y: number;
 }
+export interface keyEvent {
+	key: string;
+}
 export interface gameUpdate {
 	time: number;
 	me: godUpdate;

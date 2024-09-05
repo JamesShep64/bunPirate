@@ -61,7 +61,9 @@ var Constants = {
   INPUT_TYPES: {
     MOUSE_MOVE: "mouse move",
     MOUSE_CLICK: "mouse click",
-    GOD_COMMAND: "text entered"
+    GOD_COMMAND: "text entered",
+    KEY_DOWN: "key pressed",
+    KEY_UP: "key up"
   }
 };
 
@@ -145,72 +147,6 @@ class Action {
   }
 }
 
-// ../client/inputs.ts
-function recordActions() {
-  window.addEventListener("mousemove", handleMouseMove);
-  window.addEventListener("click", handleClick);
-  window.addEventListener("keydown", function(event) {
-    if (event.key === "Enter") {
-      input.focus();
-      event.stopPropagation();
-    }
-  });
-  setInterval(sendActions, 1000 / 30);
-}
-function sendActions() {
-  if (actionArray.length != 0) {
-    const checkedID = ID;
-    deleteDuplicates();
-    sendMessage(new Message(Constants.MSG_TYPES.INPUT, new ClientPayload(checkedID, actionArray)));
-    actionArray.length = 0;
-  }
-}
-function handleMouseMove(e) {
-  const checkedID = ID;
-  actionArray.push(new Action(Constants.INPUT_TYPES.MOUSE_MOVE, { x: e.clientX, y: e.clientY }, checkedID));
-}
-function handleClick(e) {
-  const checkedID = ID;
-  actionArray.push(new Action(Constants.INPUT_TYPES.MOUSE_CLICK, { x: e.clientX, y: e.clientY }, checkedID));
-}
-function handleTextInput(command) {
-  const checkedID = ID;
-  actionArray.push(new Action(Constants.INPUT_TYPES.GOD_COMMAND, { text: command }, checkedID));
-}
-function deleteDuplicates() {
-  const checkingArray = [];
-  for (var i = actionArray.length;i--; i >= 0) {
-    if (checkingArray.find((a) => actionEquals(actionArray[i], a)))
-      actionArray.splice(i, 1);
-    else
-      checkingArray.push(actionArray[i]);
-  }
-}
-function actionEquals(me, other) {
-  switch (me.inputType) {
-    case Constants.INPUT_TYPES.MOUSE_MOVE:
-      if (other.inputType == Constants.INPUT_TYPES.MOUSE_MOVE)
-        return true;
-      break;
-    case Constants.INPUT_TYPES.MOUSE_CLICK:
-      if (other.inputType == Constants.INPUT_TYPES.MOUSE_CLICK)
-        return true;
-      break;
-  }
-  return false;
-}
-var actionArray = [];
-var input = document.getElementById("console-input");
-input.addEventListener("keydown", function(event) {
-  if (event.key === "Enter") {
-    handleTextInput(input.value);
-    input.value = "";
-  }
-});
-input.addEventListener("click", function(event) {
-  event.stopPropagation();
-});
-
 // ../client/state.ts
 function processGameUpdate(o) {
   const update = o;
@@ -288,9 +224,15 @@ function render() {
   const { me, otherGods, blocks } = getCurrentState();
   if (!context || !me)
     return;
+  context.save();
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.fillStyle = "red";
+  context.translate(-me.x + canvas.width / 2, -me.y + canvas.height / 2);
+  cameraPosition.x = -me.x + canvas.width / 2;
+  cameraPosition.y = -me.y + canvas.height / 2;
   drawGod(me.x, me.y);
+  context.beginPath();
+  context.fill();
   if (!otherGods)
     return;
   otherGods.forEach((other) => {
@@ -306,6 +248,7 @@ function render() {
       return;
     drawPolygon(block.x, block.y, block.points);
   });
+  context.restore();
 }
 function startRendering() {
   setInterval(render, 1000 / 60);
@@ -320,33 +263,113 @@ function drawGod(x, y) {
 function drawPolygon(x, y, points) {
   if (!context)
     return;
-  context.restore();
-  var o;
+  context.save();
+  context.translate(x, y);
   context.beginPath();
   for (var i = 0;i < points.length; i++) {
-    o = i + 1;
-    if (o == points.length) {
-      o = 0;
-    }
     if (i == 0) {
-      context.moveTo(x + points[i].x, y + points[i].y);
+      context.moveTo(points[i].x, points[i].y);
     } else {
-      context.lineTo(x + points[i].x, y + points[i].y);
+      context.lineTo(points[i].x, points[i].y);
     }
     if (i == points.length - 1) {
-      context.lineTo(x + points[0].x, y + points[0].y);
+      context.lineTo(points[0].x, points[0].y);
     }
   }
   context.closePath();
   context.stroke();
   context.restore();
 }
+var cameraPosition = { x: 0, y: 0 };
 var canvas = document.getElementById("game-canvas");
 var context = canvas.getContext("2d");
 if (context)
   context.save();
 setCanvasDimensions();
 window.addEventListener("resize", setCanvasDimensions);
+
+// ../client/inputs.ts
+function recordActions() {
+  window.addEventListener("mousemove", handleMouseMove);
+  window.addEventListener("click", handleClick);
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      input.focus();
+      event.stopPropagation();
+    }
+    if (event.key === "w" || event.key === "a" || event.key === "s" || event.key === "d") {
+      handleKeyDown(event.key);
+    }
+  });
+  window.addEventListener("keyup", (event) => {
+    if (event.key === "w" || event.key === "a" || event.key === "s" || event.key === "d")
+      handleKeyUp(event.key);
+  });
+  setInterval(sendActions, 1000 / 30);
+}
+function sendActions() {
+  if (actionArray.length != 0) {
+    const checkedID = ID;
+    deleteDuplicates();
+    sendMessage(new Message(Constants.MSG_TYPES.INPUT, new ClientPayload(checkedID, actionArray)));
+    actionArray.length = 0;
+  }
+}
+function handleKeyDown(key) {
+  const checkedID = ID;
+  actionArray.push(new Action(Constants.INPUT_TYPES.KEY_DOWN, { key }, checkedID));
+}
+function handleKeyUp(key) {
+  const checkedID = ID;
+  actionArray.push(new Action(Constants.INPUT_TYPES.KEY_UP, { key }, checkedID));
+}
+function handleMouseMove(e) {
+  const checkedID = ID;
+  actionArray.push(new Action(Constants.INPUT_TYPES.MOUSE_MOVE, { x: e.clientX - cameraPosition.x, y: e.clientY - cameraPosition.y }, checkedID));
+}
+function handleClick(e) {
+  const checkedID = ID;
+  actionArray.push(new Action(Constants.INPUT_TYPES.MOUSE_CLICK, { x: e.clientX, y: e.clientY }, checkedID));
+}
+function handleTextInput(command) {
+  const checkedID = ID;
+  actionArray.push(new Action(Constants.INPUT_TYPES.GOD_COMMAND, { text: command }, checkedID));
+}
+function deleteDuplicates() {
+  const checkingArray = [];
+  for (var i = actionArray.length;i--; i >= 0) {
+    if (checkingArray.find((a) => actionEquals(actionArray[i], a)))
+      actionArray.splice(i, 1);
+    else
+      checkingArray.push(actionArray[i]);
+  }
+}
+function actionEquals(me, other) {
+  switch (me.inputType) {
+    case Constants.INPUT_TYPES.MOUSE_MOVE:
+      if (other.inputType == Constants.INPUT_TYPES.MOUSE_MOVE)
+        return true;
+      break;
+    case Constants.INPUT_TYPES.MOUSE_CLICK:
+      if (other.inputType == Constants.INPUT_TYPES.MOUSE_CLICK)
+        return true;
+      break;
+  }
+  return false;
+}
+var actionArray = [];
+var input = document.getElementById("console-input");
+input.addEventListener("keydown", function(event) {
+  if (event.key === "Enter") {
+    handleTextInput(input.value);
+    input.value = "";
+    input.blur();
+  }
+  event.stopPropagation();
+});
+input.addEventListener("keyup", (e) => {
+  e.stopPropagation();
+});
 
 // ../client/index.ts
 Promise.all([downloadAssets, upgradePromise]).then(() => {

@@ -18,6 +18,10 @@ export class Vector {
 		this.x = x;
 		this.y = y;
 	}
+	setVec(other: Vector) {
+		this.x = other.x;
+		this.y = other.y;
+	}
 	unit() {
 		return new Vector(this.x / Math.sqrt(this.x * this.x + this.y * this.y), this.y / Math.sqrt(this.x * this.x + this.y * this.y));
 	}
@@ -28,6 +32,9 @@ export class Vector {
 	unitMultiply(m: number) {
 		this.x *= m;
 		this.y *= m;
+	}
+	returnMultiplied(n: number) {
+		return new Vector(this.x * n, this.y * n);
 	}
 	unitDivide(d: number) {
 		this.x /= d;

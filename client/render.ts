@@ -1,8 +1,10 @@
-
 import { debounce } from 'throttle-debounce';
 import { getCurrentState } from './state';
 import { Vector } from '../shared/Vector';
 import { blockUpdate, objectUpdate } from '../shared/Message';
+import { cursPos } from './inputs';
+
+export const cameraPosition = { x: 0, y: 0 };
 // Get the canvas graphics context
 const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
 const context = canvas.getContext('2d');
@@ -18,13 +20,18 @@ function setCanvasDimensions() {
 
 window.addEventListener('resize', setCanvasDimensions);
 function render() {
-
 	const { me, otherGods, blocks } = getCurrentState();
 	if (!context || !me)
 		return;
+	context.save();
 	context.clearRect(0, 0, canvas.width, canvas.height)
 	context.fillStyle = 'red';
+	context.translate(-me.x + canvas.width / 2, -me.y + canvas.height / 2);
+	cameraPosition.x = -me.x + canvas.width / 2;
+	cameraPosition.y = -me.y + canvas.height / 2;
 	drawGod(me.x, me.y);
+	context.beginPath();
+	context.fill();
 	if (!otherGods)
 		return;
 	otherGods.forEach(other => {
@@ -40,6 +47,7 @@ function render() {
 			return;
 		drawPolygon(block.x, block.y, block.points);
 	});
+	context.restore();
 }
 export function startRendering() {
 	setInterval(render, 1000 / 60);
@@ -54,22 +62,18 @@ function drawGod(x: number, y: number) {
 function drawPolygon(x: number, y: number, points: Vector[]) {
 	if (!context)
 		return;
-	context.restore();
-	var o;
+	context.save();
+	context.translate(x, y);
 	context.beginPath();
 	for (var i = 0; i < points.length; i++) {
-		o = i + 1;
-		if (o == points.length) {
-			o = 0;
-		}
 		if (i == 0) {
-			context.moveTo(x + points[i].x, y + points[i].y);
+			context.moveTo(points[i].x, points[i].y);
 		}
 		else {
-			context.lineTo(x + points[i].x, y + points[i].y);
+			context.lineTo(points[i].x, points[i].y);
 		}
 		if (i == points.length - 1) {
-			context.lineTo(x + points[0].x, y + points[0].y);
+			context.lineTo(points[0].x, points[0].y);
 		}
 	}
 	context.closePath();

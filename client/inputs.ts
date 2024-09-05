@@ -2,6 +2,7 @@ import { ID } from ".";
 import { Constants } from "../shared/constants";
 import { ClientPayload, Message, Action } from "../shared/Message";
 import { sendMessage } from "./networking";
+import { cameraPosition } from "./render";
 
 //class for action, which contains the type of action the user took, and the value of the action
 const actionArray: Action[] = [];
@@ -11,21 +12,31 @@ input.addEventListener('keydown', function(event) {
 		// Action to perform when Enter is pressed
 		handleTextInput(input.value);
 		input.value = '';
+		input.blur();
 	}
+	event.stopPropagation();
 });
-input.addEventListener('click', function(event) {
-	event.stopPropagation(); // Prevent click event propagation
+input.addEventListener('keyup', (e) => {
+	e.stopPropagation();
 });
 
 
 export function recordActions() {
 	window.addEventListener("mousemove", handleMouseMove);
 	window.addEventListener("click", handleClick);
-	window.addEventListener('keydown', function(event) {
+	window.addEventListener('keydown', (event) => {
 		if (event.key === 'Enter') {
 			input.focus();  // Focus the text box when Enter is pressed
 			event.stopPropagation();
 		}
+		if (event.key === 'w' || event.key === 'a' || event.key === 's' || event.key === 'd') {
+			handleKeyDown(event.key);
+		}
+
+	});
+	window.addEventListener('keyup', (event) => {
+		if (event.key === 'w' || event.key === 'a' || event.key === 's' || event.key === 'd')
+			handleKeyUp(event.key);
 	});
 	setInterval(sendActions, 1000 / 30);
 }
@@ -38,12 +49,19 @@ function sendActions() {
 		actionArray.length = 0;
 	}
 }
-
+function handleKeyDown(key: string) {
+	const checkedID = ID as string;
+	actionArray.push(new Action(Constants.INPUT_TYPES.KEY_DOWN, { key: key }, checkedID));
+}
+function handleKeyUp(key: string) {
+	const checkedID = ID as string;
+	actionArray.push(new Action(Constants.INPUT_TYPES.KEY_UP, { key: key }, checkedID));
+}
 function handleMouseMove(e: MouseEvent) {
 	const checkedID = ID as string;
-	actionArray.push(new Action(Constants.INPUT_TYPES.MOUSE_MOVE, { x: e.clientX, y: e.clientY }, checkedID));
+	actionArray.push(new Action(Constants.INPUT_TYPES.MOUSE_MOVE, { x: e.clientX - cameraPosition.x, y: e.clientY - cameraPosition.y }, checkedID));
 }
-
+export var cursPos = { x: 0, y: 0 };
 function handleClick(e: MouseEvent) {
 	const checkedID = ID as string;
 	actionArray.push(new Action(Constants.INPUT_TYPES.MOUSE_CLICK, { x: e.clientX, y: e.clientY }, checkedID));

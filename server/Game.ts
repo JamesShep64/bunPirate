@@ -22,18 +22,44 @@ export class Game {
   }
   handleMouseMove(action: Action) {
     const val = action.value as mouseEvent;
-    this.gods[action.id].updatePosition(val.x, val.y);
+    this.gods[action.id].changePlacePoint(val.x, val.y);
   }
   handleMouseClick(action: Action) {
     const val = action.value as mouseEvent;
     this.gods[action.id].changePlacePoint(val.x, val.y);
   }
+  moveUp(id: string) {
+    this.gods[id].moveUp();
+  }
+  moveDown(id: string) {
+    this.gods[id].moveDown();
+  }
+  moveLeft(id: string) {
+    this.gods[id].moveLeft();
+  }
+  moveRight(id: string) {
+    this.gods[id].moveRight();
+  }
+  stopUp(id: string) {
+    this.gods[id].stopUp();
+  }
+  stopDown(id: string) {
+    this.gods[id].stopDown();
+  }
+  stopLeft(id: string) {
+    this.gods[id].stopLeft();
+  }
+  stopRight(id: string) {
+    this.gods[id].stopRight();
+  }
+
   godAddBlock(id: string) {
     const blockID = generateUniqueId({ length: 8 });
     this.blocks[blockID] = new Block(blockID, this.gods[id].placePoint.x, this.gods[id].placePoint.y, 50, 50);
   }
   //************************************************************
   update() {
+    Object.values(this.gods).forEach(god => god.update());
     this.users.forEach((id: string) => {
       this.createUpdate(id);
     });
@@ -51,6 +77,3 @@ export class Game {
 
   }
 }
-
-
-

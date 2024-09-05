@@ -1,22 +1,23 @@
 import { objectUpdate } from "../shared/Message";
 
 import { Vector } from "../shared/Vector";
-export class God {
+import { Controllable } from "./Controllable";
+export class God extends Controllable {
 	id: string;
 	command: string;
-	pos: Vector;
 	placePoint: Vector;
 	constructor(id: string) {
+		super(0, 0);
 		this.id = id;
 		this.command = "";
-		this.pos = new Vector(0, 0);
 		this.placePoint = new Vector(0, 0);
-	}
-	updatePosition(x: number, y: number) {
-		this.pos.set(x, y);
+		//movment vectors and bools
 	}
 	changePlacePoint(x: number, y: number) {
 		this.placePoint.set(x, y);
+	}
+	update() {
+		super.update();
 	}
 	serializeForUpdate() {
 		return {
