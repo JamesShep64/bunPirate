@@ -32,5 +32,7 @@ export const Constants = {
   },
   INPUT_TYPES: {
     MOUSE_MOVE: 'mouse move',
+    MOUSE_CLICK: 'mouse click',
+    GOD_COMMAND: 'text entered',
   }
 };

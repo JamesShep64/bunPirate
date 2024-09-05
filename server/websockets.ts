@@ -76,7 +76,7 @@ function setPayLoadFunctionPairs() {
     sendMessage(payload.id, new Message(Constants.MSG_TYPES.JOIN_GAME, { id: payload.id }));
     userJoinedGame(payload.id);
   });
-  SocketHandling.on(Constants.MSG_TYPES.INPUT, (payload: ClientPayload) => { const action = payload.data as Action; handleActions(action); });
+  SocketHandling.on(Constants.MSG_TYPES.INPUT, (payload: ClientPayload) => { const action = payload.data as Action[]; handleActions(action); });
 }
 console.log(`Listening on localhost:${serverInstance.port}`);
 

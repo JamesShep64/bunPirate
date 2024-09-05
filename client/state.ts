@@ -1,4 +1,4 @@
-import { gameUpdate, objectUpdate } from "../shared/Message";
+import { blockUpdate, gameUpdate, objectUpdate } from "../shared/Message";
 
 const RENDER_DELAY = 100;
 
@@ -41,19 +41,27 @@ export function getCurrentState() {
 	}
 	else {
 		const baseUpdate = gameUpdates[base];
-		console.log(baseUpdate.otherGods);
 		const next = gameUpdates[base + 1];
 		const ratio = (serverTime - baseUpdate.time) / (next.time - baseUpdate.time);
 		return {
 			me: interpolateObject(baseUpdate.me, next.me, ratio),
-			otherGods: interpolateObjectArray(baseUpdate.otherGods, next.otherGods, ratio)
+			otherGods: interpolateObjectArray(baseUpdate.otherGods, next.otherGods, ratio),
+			blocks: interpolateObjectArray(baseUpdate.blocks, next.blocks, ratio),
 		}
 	}
 }
-function interpolateObject(base: objectUpdate | undefined, next: objectUpdate | undefined, ratio: number) {
+function interpolateObject(base: objectUpdate | blockUpdate | undefined, next: objectUpdate | blockUpdate | undefined, ratio: number) {
 	if (!base || !next)
 		return base;
-	return { x: (next.x - base.x) * ratio + base.x, y: (next.y - base.y) * ratio + base.y };
+	if ("points" in base)
+		return {
+			x: (next.x - base.x) * ratio + base.x, y: (next.y - base.y) * ratio + base.y,
+
+			points: base.points
+		};
+	return {
+		x: (next.x - base.x) * ratio + base.x, y: (next.y - base.y) * ratio + base.y
+	};
 }
 function interpolateObjectArray(base: objectUpdate[] | undefined, next: objectUpdate[] | undefined, ratio: number) {
 	if (!base || !next)

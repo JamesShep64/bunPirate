@@ -59,7 +59,9 @@ var Constants = {
     WS_ID: "websocket id"
   },
   INPUT_TYPES: {
-    MOUSE_MOVE: "mouse move"
+    MOUSE_MOVE: "mouse move",
+    MOUSE_CLICK: "mouse click",
+    GOD_COMMAND: "text entered"
   }
 };
 
@@ -146,6 +148,13 @@ class Action {
 // ../client/inputs.ts
 function recordActions() {
   window.addEventListener("mousemove", handleMouseMove);
+  window.addEventListener("click", handleClick);
+  window.addEventListener("keydown", function(event) {
+    if (event.key === "Enter") {
+      input.focus();
+      event.stopPropagation();
+    }
+  });
   setInterval(sendActions, 1000 / 30);
 }
 function sendActions() {
@@ -159,6 +168,14 @@ function sendActions() {
 function handleMouseMove(e) {
   const checkedID = ID;
   actionArray.push(new Action(Constants.INPUT_TYPES.MOUSE_MOVE, { x: e.clientX, y: e.clientY }, checkedID));
+}
+function handleClick(e) {
+  const checkedID = ID;
+  actionArray.push(new Action(Constants.INPUT_TYPES.MOUSE_CLICK, { x: e.clientX, y: e.clientY }, checkedID));
+}
+function handleTextInput(command) {
+  const checkedID = ID;
+  actionArray.push(new Action(Constants.INPUT_TYPES.GOD_COMMAND, { text: command }, checkedID));
 }
 function deleteDuplicates() {
   const checkingArray = [];
@@ -175,69 +192,24 @@ function actionEquals(me, other) {
       if (other.inputType == Constants.INPUT_TYPES.MOUSE_MOVE)
         return true;
       break;
+    case Constants.INPUT_TYPES.MOUSE_CLICK:
+      if (other.inputType == Constants.INPUT_TYPES.MOUSE_CLICK)
+        return true;
+      break;
   }
   return false;
 }
 var actionArray = [];
-
-// ../node_modules/throttle-debounce/esm/index.js
-function throttle(delay, callback, options) {
-  var _ref = options || {}, _ref$noTrailing = _ref.noTrailing, noTrailing = _ref$noTrailing === undefined ? false : _ref$noTrailing, _ref$noLeading = _ref.noLeading, noLeading = _ref$noLeading === undefined ? false : _ref$noLeading, _ref$debounceMode = _ref.debounceMode, debounceMode = _ref$debounceMode === undefined ? undefined : _ref$debounceMode;
-  var timeoutID;
-  var cancelled = false;
-  var lastExec = 0;
-  function clearExistingTimeout() {
-    if (timeoutID) {
-      clearTimeout(timeoutID);
-    }
+var input = document.getElementById("console-input");
+input.addEventListener("keydown", function(event) {
+  if (event.key === "Enter") {
+    handleTextInput(input.value);
+    input.value = "";
   }
-  function cancel(options2) {
-    var _ref2 = options2 || {}, _ref2$upcomingOnly = _ref2.upcomingOnly, upcomingOnly = _ref2$upcomingOnly === undefined ? false : _ref2$upcomingOnly;
-    clearExistingTimeout();
-    cancelled = !upcomingOnly;
-  }
-  function wrapper() {
-    for (var _len = arguments.length, arguments_ = new Array(_len), _key = 0;_key < _len; _key++) {
-      arguments_[_key] = arguments[_key];
-    }
-    var self = this;
-    var elapsed = Date.now() - lastExec;
-    if (cancelled) {
-      return;
-    }
-    function exec() {
-      lastExec = Date.now();
-      callback.apply(self, arguments_);
-    }
-    function clear() {
-      timeoutID = undefined;
-    }
-    if (!noLeading && debounceMode && !timeoutID) {
-      exec();
-    }
-    clearExistingTimeout();
-    if (debounceMode === undefined && elapsed > delay) {
-      if (noLeading) {
-        lastExec = Date.now();
-        if (!noTrailing) {
-          timeoutID = setTimeout(debounceMode ? clear : exec, delay);
-        }
-      } else {
-        exec();
-      }
-    } else if (noTrailing !== true) {
-      timeoutID = setTimeout(debounceMode ? clear : exec, debounceMode === undefined ? delay - elapsed : delay);
-    }
-  }
-  wrapper.cancel = cancel;
-  return wrapper;
-}
-function debounce(delay, callback, options) {
-  var _ref = options || {}, _ref$atBegin = _ref.atBegin, atBegin = _ref$atBegin === undefined ? false : _ref$atBegin;
-  return throttle(delay, callback, {
-    debounceMode: atBegin !== false
-  });
-}
+});
+input.addEventListener("click", function(event) {
+  event.stopPropagation();
+});
 
 // ../client/state.ts
 function processGameUpdate(o) {
@@ -274,19 +246,28 @@ function getCurrentState() {
     return gameUpdates[gameUpdates.length - 1];
   } else {
     const baseUpdate = gameUpdates[base];
-    console.log(baseUpdate.otherGods);
     const next = gameUpdates[base + 1];
     const ratio = (serverTime - baseUpdate.time) / (next.time - baseUpdate.time);
     return {
       me: interpolateObject(baseUpdate.me, next.me, ratio),
-      otherGods: interpolateObjectArray(baseUpdate.otherGods, next.otherGods, ratio)
+      otherGods: interpolateObjectArray(baseUpdate.otherGods, next.otherGods, ratio),
+      blocks: interpolateObjectArray(baseUpdate.blocks, next.blocks, ratio)
     };
   }
 }
 function interpolateObject(base, next, ratio) {
   if (!base || !next)
     return base;
-  return { x: (next.x - base.x) * ratio + base.x, y: (next.y - base.y) * ratio + base.y };
+  if ("points" in base)
+    return {
+      x: (next.x - base.x) * ratio + base.x,
+      y: (next.y - base.y) * ratio + base.y,
+      points: base.points
+    };
+  return {
+    x: (next.x - base.x) * ratio + base.x,
+    y: (next.y - base.y) * ratio + base.y
+  };
 }
 function interpolateObjectArray(base, next, ratio) {
   if (!base || !next)
@@ -300,24 +281,30 @@ var firstServerTimestamp = 0;
 
 // ../client/render.ts
 function setCanvasDimensions() {
-  const scaleRatio = Math.max(1, 800 / window.innerWidth);
-  canvas.width = 1.5 * scaleRatio * window.innerWidth;
-  canvas.height = 1.5 * scaleRatio * window.innerHeight;
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
 }
 function render() {
-  const { me, otherGods } = getCurrentState();
+  const { me, otherGods, blocks } = getCurrentState();
   if (!context || !me)
     return;
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.fillStyle = "red";
   drawGod(me.x, me.y);
-  console.log(otherGods);
   if (!otherGods)
     return;
   otherGods.forEach((other) => {
     if (!other)
       return;
     drawGod(other.x, other.y);
+  });
+  if (!blocks)
+    return;
+  blocks.forEach((b) => {
+    const block = b;
+    if (!block)
+      return;
+    drawPolygon(block.x, block.y, block.points);
   });
 }
 function startRendering() {
@@ -330,12 +317,36 @@ function drawGod(x, y) {
   context.arc(x, y, 100, 0, 2 * Math.PI);
   context.fill();
 }
+function drawPolygon(x, y, points) {
+  if (!context)
+    return;
+  context.restore();
+  var o;
+  context.beginPath();
+  for (var i = 0;i < points.length; i++) {
+    o = i + 1;
+    if (o == points.length) {
+      o = 0;
+    }
+    if (i == 0) {
+      context.moveTo(x + points[i].x, y + points[i].y);
+    } else {
+      context.lineTo(x + points[i].x, y + points[i].y);
+    }
+    if (i == points.length - 1) {
+      context.lineTo(x + points[0].x, y + points[0].y);
+    }
+  }
+  context.closePath();
+  context.stroke();
+  context.restore();
+}
 var canvas = document.getElementById("game-canvas");
 var context = canvas.getContext("2d");
 if (context)
   context.save();
 setCanvasDimensions();
-window.addEventListener("resize", debounce(40, setCanvasDimensions));
+window.addEventListener("resize", setCanvasDimensions);
 
 // ../client/index.ts
 Promise.all([downloadAssets, upgradePromise]).then(() => {
