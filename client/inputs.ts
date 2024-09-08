@@ -21,6 +21,7 @@ input.addEventListener('keyup', (e) => {
 });
 
 
+export var toggleInterpolate = true;
 export function recordActions() {
 	window.addEventListener("mousemove", handleMouseMove);
 	window.addEventListener("click", handleClick);
@@ -68,6 +69,15 @@ function handleClick(e: MouseEvent) {
 }
 function handleTextInput(command: string) {
 	const checkedID = ID as string;
+	if (command === "togInt") {
+		toggleInterpolate = !toggleInterpolate;
+		return;
+	}
+	if (command === "default") {
+		toggleInterpolate = true;
+		actionArray.push(new Action(Constants.INPUT_TYPES.GOD_COMMAND, { text: "tps 30" }, checkedID));
+		return;
+	}
 	actionArray.push(new Action(Constants.INPUT_TYPES.GOD_COMMAND, { text: command }, checkedID));
 }
 function deleteDuplicates() {

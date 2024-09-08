@@ -173,6 +173,9 @@ function getBaseUpdate() {
   return -1;
 }
 function getCurrentState() {
+  if (!toggleInterpolate) {
+    return gameUpdates[0];
+  }
   if (!firstServerTimestamp) {
     return {};
   }
@@ -185,25 +188,21 @@ function getCurrentState() {
     const next = gameUpdates[base + 1];
     const ratio = (serverTime - baseUpdate.time) / (next.time - baseUpdate.time);
     return {
-      me: interpolateObject(baseUpdate.me, next.me, ratio),
+      meGod: interpolateObject(baseUpdate.meGod, next.meGod, ratio),
+      mePlayer: interpolateObject(baseUpdate.mePlayer, next.mePlayer, ratio),
       otherGods: interpolateObjectArray(baseUpdate.otherGods, next.otherGods, ratio),
-      blocks: interpolateObjectArray(baseUpdate.blocks, next.blocks, ratio)
+      otherPlayers: interpolateObjectArray(baseUpdate.otherPlayers, next.otherPlayers, ratio),
+      blocks: interpolateObjectArray(baseUpdate.blocks, next.blocks, ratio),
+      ships: interpolateObjectArray(baseUpdate.ships, next.ships, ratio)
     };
   }
 }
 function interpolateObject(base, next, ratio) {
   if (!base || !next)
-    return base;
-  if ("points" in base)
-    return {
-      x: (next.x - base.x) * ratio + base.x,
-      y: (next.y - base.y) * ratio + base.y,
-      points: base.points
-    };
-  return {
-    x: (next.x - base.x) * ratio + base.x,
-    y: (next.y - base.y) * ratio + base.y
-  };
+    return;
+  base.x = (next.x - base.x) * ratio + base.x;
+  base.y = (next.y - base.y) * ratio + base.y;
+  return base;
 }
 function interpolateObjectArray(base, next, ratio) {
   if (!base || !next)
@@ -220,19 +219,29 @@ function setCanvasDimensions() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
 }
-function render() {
-  const { me, otherGods, blocks } = getCurrentState();
-  if (!context || !me)
+function initializeDrawing(meGod, mePlayer) {
+  if (!meGod && !mePlayer)
     return;
   context.save();
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.fillStyle = "red";
-  context.translate(-me.x + canvas.width / 2, -me.y + canvas.height / 2);
-  cameraPosition.x = -me.x + canvas.width / 2;
-  cameraPosition.y = -me.y + canvas.height / 2;
-  drawGod(me.x, me.y);
-  context.beginPath();
-  context.fill();
+}
+function drawMe(meGod, mePlayer) {
+  if (meGod && !mePlayer) {
+    context.translate(-meGod.x + canvas.width / 2, -meGod.y + canvas.height / 2);
+    cameraPosition.x = -meGod.x + canvas.width / 2;
+    cameraPosition.y = -meGod.y + canvas.height / 2;
+    drawGod(meGod.x, meGod.y);
+  }
+  if (mePlayer) {
+    const me = mePlayer;
+    context.translate(-me.x + canvas.width / 2, -me.y + canvas.height / 2);
+    cameraPosition.x = -me.x + canvas.width / 2;
+    cameraPosition.y = -me.y + canvas.height / 2;
+    drawPolygon(me.x, me.y, me.points);
+  }
+}
+function drawOtherGods(otherGods) {
   if (!otherGods)
     return;
   otherGods.forEach((other) => {
@@ -240,14 +249,42 @@ function render() {
       return;
     drawGod(other.x, other.y);
   });
+}
+function drawBlocks(blocks) {
   if (!blocks)
     return;
-  blocks.forEach((b) => {
-    const block = b;
+  blocks.forEach((block) => {
     if (!block)
       return;
     drawPolygon(block.x, block.y, block.points);
   });
+}
+function drawOtherPlayers(otherPlayers) {
+  if (!otherPlayers)
+    return;
+  otherPlayers.forEach((player) => {
+    if (!player)
+      return;
+    drawPolygon(player.x, player.y, player.points);
+  });
+}
+function drawShips(ships) {
+  if (!ships)
+    return;
+  ships.forEach((ship) => {
+    if (!ship)
+      return;
+    drawShip(ship);
+  });
+}
+function render() {
+  const { meGod, mePlayer, otherGods, otherPlayers, blocks, ships } = getCurrentState();
+  initializeDrawing(meGod, mePlayer);
+  drawMe(meGod, mePlayer);
+  drawOtherGods(otherGods);
+  drawBlocks(blocks);
+  drawOtherPlayers(otherPlayers);
+  drawShips(ships);
   context.restore();
 }
 function startRendering() {
@@ -275,6 +312,38 @@ function drawPolygon(x, y, points) {
     if (i == points.length - 1) {
       context.lineTo(points[0].x, points[0].y);
     }
+  }
+  context.closePath();
+  context.stroke();
+  context.restore();
+}
+function drawShip(ship) {
+  if (!context)
+    return;
+  context.save();
+  context.translate(ship.x, ship.y);
+  context.beginPath();
+  for (var i = 0;i < ship.bodyPoints.length; i++) {
+    if (i == 0) {
+      context.moveTo(ship.bodyPoints[i].x, ship.bodyPoints[i].y);
+    } else {
+      context.lineTo(ship.bodyPoints[i].x, ship.bodyPoints[i].y);
+    }
+    if (i == ship.bodyPoints.length - 1) {
+      context.lineTo(ship.bodyPoints[0].x, ship.bodyPoints[0].y);
+    }
+  }
+  context.closePath();
+  context.stroke();
+  context.beginPath();
+  var o = 0;
+  for (var i = 0;i < ship.bodyPoints.length; i++) {
+    if (ship.missingZeros.indexOf(i) != -1) {
+      o++;
+      continue;
+    }
+    context.moveTo(ship.zeroPoints[i - o].x, ship.zeroPoints[i - o].y);
+    context.lineTo(ship.bodyPoints[i].x, ship.bodyPoints[i].y);
   }
   context.closePath();
   context.stroke();
@@ -333,6 +402,15 @@ function handleClick(e) {
 }
 function handleTextInput(command) {
   const checkedID = ID;
+  if (command === "togInt") {
+    toggleInterpolate = !toggleInterpolate;
+    return;
+  }
+  if (command === "default") {
+    toggleInterpolate = true;
+    actionArray.push(new Action(Constants.INPUT_TYPES.GOD_COMMAND, { text: "tps 30" }, checkedID));
+    return;
+  }
   actionArray.push(new Action(Constants.INPUT_TYPES.GOD_COMMAND, { text: command }, checkedID));
 }
 function deleteDuplicates() {
@@ -370,6 +448,7 @@ input.addEventListener("keydown", function(event) {
 input.addEventListener("keyup", (e) => {
   e.stopPropagation();
 });
+var toggleInterpolate = true;
 
 // ../client/index.ts
 Promise.all([downloadAssets, upgradePromise]).then(() => {

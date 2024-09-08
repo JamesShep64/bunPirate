@@ -41,9 +41,12 @@ export interface keyEvent {
 }
 export interface gameUpdate {
 	time: number;
-	me: godUpdate;
+	meGod: godUpdate;
+	mePlayer: playerUpdate;
 	otherGods: godUpdate[];
+	otherPlayers: playerUpdate[];
 	blocks: blockUpdate[];
+	ships: shipUpdate[];
 }
 export interface objectUpdate {
 	id: string;
@@ -53,9 +56,17 @@ export interface objectUpdate {
 export interface blockUpdate extends objectUpdate {
 	points: Vector[];
 }
+export interface shipUpdate extends objectUpdate {
+	bodyPoints: Vector[];
+	zeroPoints: Vector[];
+	missingZeros: number[];
+}
 export interface godUpdate extends objectUpdate {
 	placeX: number;
 	placeY: number;
+}
+export interface playerUpdate extends objectUpdate {
+	points: Vector[];
 }
 export interface godCommand {
 	text: string;

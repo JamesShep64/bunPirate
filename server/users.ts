@@ -67,9 +67,17 @@ function handleKeyUp(action: Action) {
 }
 function handleCommands(action: Action) {
 	const val = action.value as godCommand;
-	switch (val.text) {
+	const command = val.text.split(" ");
+	switch (command[0]) {
 		case "poly":
 			game.godAddBlock(action.id);
 			break;
+		case "player":
+			game.godAddPlayer(action.id);
+			break;
+		case "ship":
+			game.godAddShip(action.id);
+		case "tps":
+			game.changeTicks(Number(command[1]));
 	}
 }

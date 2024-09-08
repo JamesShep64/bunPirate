@@ -1,0 +1,97 @@
+import { Vector } from "../shared/Vector";
+import { PirateShip } from "./PirateShip";
+import { Polygon } from "./polygon";
+function vectorCollision(zero1: Vector, vec1: Vector, zero2: Vector, vec2: Vector) {
+  var h = vec1.x * vec2.y - vec1.y * vec2.x;
+  var t = (zero2.x - zero1.x) * vec2.y - (zero2.y - zero1.y) * vec2.x;
+  t /= h;
+
+  var u = (zero2.x - zero1.x) * vec1.y - (zero2.y - zero1.y) * vec1.x;
+  u /= h;
+
+  return { t, u };
+}
+
+//the return is a displacment vector for poly1
+
+export function polygonPolygonCollision(poly1: Polygon, poly2: Polygon) {
+  const firstCol = halfPolygonPolygonCollision(poly1, poly2);
+  if (firstCol)
+    return firstCol;
+  const col = halfPolygonPolygonCollision(poly2, poly1);
+  if (col) {
+    col.multiply(new Vector(-1, -1));
+    return col;
+  }
+}
+function halfPolygonPolygonCollision(poly1: Polygon, poly2: Polygon) {
+  var pointsToCheck = 0;
+  if (poly1.isParellelogram)
+    pointsToCheck = poly1.points.length / 2;
+  else
+    pointsToCheck = poly1.points.length;
+  for (var i = 0; i < pointsToCheck; i++) {
+    var zero1 = poly1.pos;
+    var vec1 = poly1.points[i];
+    for (var j = 0; j < poly2.points.length; j++) {
+      var o = j + 1;
+      if (o == poly2.points.length) {
+        o = 0;
+      }
+      var vec2 = new Vector(poly2.points[o].x - poly2.points[j].x, poly2.points[o].y - poly2.points[j].y);
+      var { t, u } = vectorCollision(zero1, vec1, new Vector(poly2.points[j].x + poly2.pos.x, poly2.points[j].y + poly2.pos.y), vec2);
+
+      if (t > -1 && t < 1 && u >= 0 && u < 1) {
+        var mult = 1;
+        if (t < 0) {
+          mult = -1;
+          t = Math.abs(t);
+        }
+        var push = new Vector(1 - t, 1 - t);
+        push.multiply(new Vector(mult, mult));
+        push.multiply(vec1);
+        push.multiply(new Vector(-1, -1));
+        return push;
+      }
+    }
+  }
+  return null;
+}
+export function polygonShipCollision(poly: Polygon, ship: PirateShip) {
+  const firstCol = halfPolygonPolygonCollision(poly, ship.bodyPoly);
+  if (firstCol)
+    return firstCol;
+  const secondCol = shipDiagnolPolygonCollision(ship, poly);
+  if (secondCol) {
+    return secondCol;
+  }
+}
+function shipDiagnolPolygonCollision(ship: PirateShip, poly: Polygon) {
+  var diff = 0;
+  for (var i = 0; i < ship.bodyPoly.points.length; i++) {
+    if (ship.missingZeros.indexOf(i) != -1) {
+      diff++;
+      continue;
+    }
+    var zero1 = ship.collisionZerosPolygon.points[i - diff].copy();
+    zero1.add(ship.pos);
+    var vec1 = ship.bodyPoly.points[i].copy();
+    vec1.subtract(ship.collisionZerosPolygon.points[i - diff]);
+    for (var j = 0; j < poly.points.length; j++) {
+      var o = j + 1;
+      if (o == poly.points.length) {
+        o = 0;
+      }
+      var vec2 = new Vector(poly.points[o].x - poly.points[j].x, poly.points[o].y - poly.points[j].y);
+      var { t, u } = vectorCollision(zero1, vec1, new Vector(poly.points[j].x + poly.pos.x, poly.points[j].y + poly.pos.y), vec2);
+      if (t > 0 && t < 1 && u >= 0 && u < 1) {
+        var push = new Vector(1 - t, 1 - t);
+        push.multiply(vec1);
+        return push;
+      }
+    }
+  }
+  return null;
+}
+
+

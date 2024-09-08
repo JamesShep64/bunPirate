@@ -50,7 +50,9 @@ export class Vector {
 	addY(num: number) {
 		this.y += num;
 	}
-
+	copy() {
+		return new Vector(this.x, this.y);
+	}
 	dot(vec: Vector) {
 		return this.x * vec.x + this.y * vec.y;
 	}

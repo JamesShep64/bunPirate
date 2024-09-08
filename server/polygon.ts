@@ -5,11 +5,15 @@ export class Polygon {
   points: Vector[];
   radius: number;
   direction: number;
+  pos: Vector;
 
-  constructor(points: Vector[]) {
+  isParellelogram: boolean;
+  constructor(x: number, y: number, points: Vector[], isParellelogram: boolean) {
     this.points = points;
     this.radius = 0;
     this.direction = 0;
+    this.pos = new Vector(x, y);
+    this.isParellelogram = isParellelogram;
   }
 
   //rotates about zero ANGLE IN RADIANS
@@ -26,7 +30,9 @@ export class Polygon {
     }
     this.direction += angle;
     this.direction %= 2 * Constants.PI;
-
+  }
+  displace(push: Vector) {
+    this.pos.add(push);
   }
 
   rotateTo(angle: number) {
