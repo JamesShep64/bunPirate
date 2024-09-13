@@ -44,6 +44,8 @@ var Constants = {
   PLAYER_WIDTH: 25,
   BLOCK_HEIGHT: 30,
   BLOCK_WIDTH: 25,
+  MAX_GRAVITY: 2,
+  GRAVITY_MULT: 0.1,
   MSG_TYPES: {
     INPUT: "user input",
     JOIN_GAME: "join_game",
@@ -193,15 +195,32 @@ function getCurrentState() {
       otherGods: interpolateObjectArray(baseUpdate.otherGods, next.otherGods, ratio),
       otherPlayers: interpolateObjectArray(baseUpdate.otherPlayers, next.otherPlayers, ratio),
       blocks: interpolateObjectArray(baseUpdate.blocks, next.blocks, ratio),
-      ships: interpolateObjectArray(baseUpdate.ships, next.ships, ratio)
+      ships: interpolateShips(baseUpdate.ships, next.ships, ratio)
     };
   }
+}
+function interpolateShips(base, next, ratio) {
+  interpolateObjectArray(base, next, ratio);
+  base.forEach((ship) => {
+    interpolateObjectArray(ship.masses, next.find((next2) => next2.id === ship.id)?.masses, ratio);
+  });
+  return base;
 }
 function interpolateObject(base, next, ratio) {
   if (!base || !next)
     return;
-  base.x = (next.x - base.x) * ratio + base.x;
-  base.y = (next.y - base.y) * ratio + base.y;
+  if (base.x && base.y) {
+    base.x = (next.x - base.x) * ratio + base.x;
+    base.y = (next.y - base.y) * ratio + base.y;
+  }
+  var b = base;
+  var n = next;
+  if (b.points) {
+    for (var i = 0;i < b.points.length; i++) {
+      b.points[i].x = (n.points[i].x - b.points[i].x) * ratio + b.points[i].x;
+      b.points[i].y = (n.points[i].y - b.points[i].y) * ratio + b.points[i].y;
+    }
+  }
   return base;
 }
 function interpolateObjectArray(base, next, ratio) {
@@ -225,6 +244,69 @@ function initializeDrawing(meGod, mePlayer) {
   context.save();
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.fillStyle = "red";
+  if (meGod)
+    drawBackground(meGod.x, meGod.y);
+  else
+    drawBackground(mePlayer.x, mePlayer.y);
+}
+function drawBackground(camX, camY) {
+  context.save();
+  context.translate(-camX + canvas.width / 2, -camY + canvas.height / 2);
+  for (var x = camX - canvas.width / 2 - 400;x < camX + canvas.width / 2 + 400; x += 50) {
+    for (var y = camY - canvas.height / 2 - 400;y < camY + canvas.height / 2 + 400; y += 50) {
+      context.save();
+      x = Math.ceil(x / 50) * 50;
+      y = Math.ceil(y / 50) * 50;
+      var xCheck = x - 16550;
+      var yCheck = y - 16550;
+      context.translate(x, y);
+      if (yCheck < -16050 && (xCheck % 1250 == 0 && yCheck % 2350 == 0 || xCheck % 3500 == 0 && yCheck % 3150 == 0 || xCheck % 1000 == 0 && yCheck % 900 == 0 || xCheck % 3350 == 0 && yCheck % 700 == 0)) {
+        context.beginPath();
+        context.fillStyle = "#FFDB51";
+        context.beginPath();
+        const a = 5;
+        context.moveTo(108 / a, 0);
+        context.lineTo(141 / a, 70 / a);
+        context.lineTo(218 / a, 78.3 / a);
+        context.lineTo(162 / a, 131 / a);
+        context.lineTo(175 / a, 205 / a);
+        context.lineTo(108 / a, 170 / a);
+        context.lineTo(41.2 / a, 205 / a);
+        context.lineTo(55 / a, 131 / a);
+        context.lineTo(1 / a, 78 / a);
+        context.lineTo(75 / a, 68 / a);
+        context.lineTo(108 / a, 0);
+        context.closePath();
+        context.fill();
+      }
+      if (yCheck > -16850 && (xCheck % 1250 == 0 && yCheck % 2350 == 0 || xCheck % 3500 == 0 && yCheck % 3150 == 0 || xCheck % 1000 == 0 && yCheck % 900 == 0 || xCheck % 3350 == 0 && yCheck % 700 == 0)) {
+        context.beginPath();
+        context.moveTo(170, 80);
+        context.bezierCurveTo(130, 100, 130, 150, 230, 150);
+        context.bezierCurveTo(250, 180, 320, 180, 340, 150);
+        context.bezierCurveTo(420, 150, 420, 120, 390, 100);
+        context.bezierCurveTo(430, 40, 370, 30, 340, 50);
+        context.bezierCurveTo(320, 5, 250, 20, 250, 50);
+        context.bezierCurveTo(200, 5, 150, 20, 170, 80);
+        context.closePath();
+        context.fillStyle = "blue";
+        context.fill();
+      }
+      context.restore();
+    }
+  }
+  context.restore();
+  context.fillStyle = "red";
+}
+function render() {
+  const { meGod, mePlayer, otherGods, otherPlayers, blocks, ships } = getCurrentState();
+  initializeDrawing(meGod, mePlayer);
+  drawMe(meGod, mePlayer);
+  drawOtherGods(otherGods);
+  drawBlocks(blocks);
+  drawOtherPlayers(otherPlayers);
+  drawShips(ships);
+  context.restore();
 }
 function drawMe(meGod, mePlayer) {
   if (meGod && !mePlayer) {
@@ -277,18 +359,8 @@ function drawShips(ships) {
     drawShip(ship);
   });
 }
-function render() {
-  const { meGod, mePlayer, otherGods, otherPlayers, blocks, ships } = getCurrentState();
-  initializeDrawing(meGod, mePlayer);
-  drawMe(meGod, mePlayer);
-  drawOtherGods(otherGods);
-  drawBlocks(blocks);
-  drawOtherPlayers(otherPlayers);
-  drawShips(ships);
-  context.restore();
-}
 function startRendering() {
-  setInterval(render, 1000 / 60);
+  setInterval(render, 1000 / 90);
 }
 function drawGod(x, y) {
   if (!context)
@@ -323,30 +395,39 @@ function drawShip(ship) {
   context.save();
   context.translate(ship.x, ship.y);
   context.beginPath();
-  for (var i = 0;i < ship.bodyPoints.length; i++) {
+  context.arc(0, 0, 10, 0, 2 * Math.PI);
+  context.fill();
+  context.beginPath();
+  for (var i = 0;i < ship.points.length; i++) {
     if (i == 0) {
-      context.moveTo(ship.bodyPoints[i].x, ship.bodyPoints[i].y);
+      context.moveTo(ship.points[i].x, ship.points[i].y);
     } else {
-      context.lineTo(ship.bodyPoints[i].x, ship.bodyPoints[i].y);
+      context.lineTo(ship.points[i].x, ship.points[i].y);
     }
-    if (i == ship.bodyPoints.length - 1) {
-      context.lineTo(ship.bodyPoints[0].x, ship.bodyPoints[0].y);
+    if (i == ship.points.length - 1) {
+      context.lineTo(ship.points[0].x, ship.points[0].y);
     }
   }
   context.closePath();
   context.stroke();
   context.beginPath();
   var o = 0;
-  for (var i = 0;i < ship.bodyPoints.length; i++) {
+  for (var i = 0;i < ship.points.length; i++) {
     if (ship.missingZeros.indexOf(i) != -1) {
       o++;
       continue;
     }
     context.moveTo(ship.zeroPoints[i - o].x, ship.zeroPoints[i - o].y);
-    context.lineTo(ship.bodyPoints[i].x, ship.bodyPoints[i].y);
+    context.lineTo(ship.points[i].x, ship.points[i].y);
   }
   context.closePath();
   context.stroke();
+  if (ship.masses)
+    ship.masses.forEach((mass) => {
+      context.beginPath();
+      context.arc(mass.points[0].x, mass.points[0].y, 10, 0, 2 * Math.PI);
+      context.fill();
+    });
   context.restore();
 }
 var cameraPosition = { x: 0, y: 0 };

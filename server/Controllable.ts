@@ -1,4 +1,5 @@
 
+import { Constants } from "../shared/constants";
 import { Vector } from "../shared/Vector";
 export class Controllable {
   horizontalMove: Vector;
@@ -70,8 +71,8 @@ export class Controllable {
   }
   update() {
     if (this.movingLeft || this.movingRight)
-      this.pos.add(this.horizontalMove.returnMultiplied(2));
+      this.pos.add(this.horizontalMove.unitMultiplyReturn(Constants.VELOCITY_MULTIPLIER * 10));
     if (this.movingUp || this.movingDown)
-      this.pos.add(this.verticalMove.returnMultiplied(2));
+      this.pos.add(this.verticalMove.unitMultiplyReturn(Constants.VELOCITY_MULTIPLIER * 10));
   }
 }

@@ -1,4 +1,4 @@
-import { blockUpdate, gameUpdate, objectUpdate } from "../shared/Message";
+import { blockUpdate, gameUpdate, objectUpdate, shipUpdate } from "../shared/Message";
 import { toggleInterpolate } from "./inputs";
 
 const RENDER_DELAY = 100;
@@ -53,15 +53,33 @@ export function getCurrentState() {
 			otherGods: interpolateObjectArray(baseUpdate.otherGods, next.otherGods, ratio),
 			otherPlayers: interpolateObjectArray(baseUpdate.otherPlayers, next.otherPlayers, ratio),
 			blocks: interpolateObjectArray(baseUpdate.blocks, next.blocks, ratio),
-			ships: interpolateObjectArray(baseUpdate.ships, next.ships, ratio)
+			ships: interpolateShips(baseUpdate.ships, next.ships, ratio)
 		}
 	}
 }
-function interpolateObject(base: objectUpdate | blockUpdate | undefined, next: objectUpdate | blockUpdate | undefined, ratio: number) {
+function interpolateShips(base: shipUpdate[], next: shipUpdate[], ratio: number) {
+	interpolateObjectArray(base, next, ratio);
+	base.forEach((ship) => {
+		interpolateObjectArray(ship.masses, next.find(next => next.id === ship.id)?.masses, ratio);
+	});
+	return base;
+}
+function interpolateObject(base: blockUpdate | objectUpdate | undefined, next: blockUpdate | objectUpdate | undefined, ratio: number) {
 	if (!base || !next)
 		return;
-	base.x = (next.x - base.x) * ratio + base.x;
-	base.y = (next.y - base.y) * ratio + base.y;
+	if (base.x && base.y) {
+		base.x = (next.x - base.x) * ratio + base.x;
+		base.y = (next.y - base.y) * ratio + base.y;
+	}
+	var b = base as blockUpdate;
+	var n = next as blockUpdate;
+	if (b.points) {
+		for (var i = 0; i < b.points.length; i++) {
+			b.points[i].x = (n.points[i].x - b.points[i].x) * ratio + b.points[i].x;
+			b.points[i].y = (n.points[i].y - b.points[i].y) * ratio + b.points[i].y;
+		}
+	}
+
 	return base;
 }
 

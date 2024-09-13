@@ -15,6 +15,8 @@ export const Constants = {
   PLAYER_WIDTH: 25,
   BLOCK_HEIGHT: 30,
   BLOCK_WIDTH: 25,
+  MAX_GRAVITY: 2,
+  GRAVITY_MULT: .1,
 
   MSG_TYPES: {
     INPUT: 'user input',

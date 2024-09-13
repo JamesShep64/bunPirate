@@ -17,7 +17,7 @@ export class Polygon {
   }
 
   //rotates about zero ANGLE IN RADIANS
-  rotate(angle: number, cosVal: number | undefined, sinVal: number | undefined) {
+  rotate(angle: number, cosVal?: number | undefined, sinVal?: number | undefined) {
     var sin = 0;
     var cos = 0;
     if (cosVal && sinVal) { cos = cosVal; sin = sinVal; }

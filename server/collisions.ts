@@ -57,8 +57,43 @@ function halfPolygonPolygonCollision(poly1: Polygon, poly2: Polygon) {
   }
   return null;
 }
+//because the ship is big two polygon diagnols can collide at one, so return the sum.
+function halfPolygonShipCollision(poly1: Polygon, poly2: Polygon) {
+  var totalPush = new Vector(0, 0);
+  var pointsToCheck = 0;
+  if (poly1.isParellelogram)
+    pointsToCheck = poly1.points.length / 2;
+  else
+    pointsToCheck = poly1.points.length;
+  for (var i = 0; i < pointsToCheck; i++) {
+    var zero1 = poly1.pos;
+    var vec1 = poly1.points[i];
+    for (var j = 0; j < poly2.points.length; j++) {
+      var o = j + 1;
+      if (o == poly2.points.length) {
+        o = 0;
+      }
+      var vec2 = new Vector(poly2.points[o].x - poly2.points[j].x, poly2.points[o].y - poly2.points[j].y);
+      var { t, u } = vectorCollision(zero1, vec1, new Vector(poly2.points[j].x + poly2.pos.x, poly2.points[j].y + poly2.pos.y), vec2);
+
+      if (t > -1 && t < 1 && u >= 0 && u < 1) {
+        var mult = 1;
+        if (t < 0) {
+          mult = -1;
+          t = Math.abs(t);
+        }
+        var push = new Vector(1 - t, 1 - t);
+        push.multiply(new Vector(mult, mult));
+        push.multiply(vec1);
+        push.multiply(new Vector(-1, -1));
+        totalPush.add(push);
+      }
+    }
+  }
+  return totalPush;
+}
 export function polygonShipCollision(poly: Polygon, ship: PirateShip) {
-  const firstCol = halfPolygonPolygonCollision(poly, ship.bodyPoly);
+  const firstCol = halfPolygonShipCollision(poly, ship.bodyPoly);
   if (firstCol)
     return firstCol;
   const secondCol = shipDiagnolPolygonCollision(ship, poly);
@@ -93,5 +128,8 @@ function shipDiagnolPolygonCollision(ship: PirateShip, poly: Polygon) {
   }
   return null;
 }
+
+
+
 
 

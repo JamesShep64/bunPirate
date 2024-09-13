@@ -29,12 +29,15 @@ export class Vector {
 		this.x *= vec.x;
 		this.y *= vec.y;
 	}
+	multiplyReturn(vec: Vector) {
+		return new Vector(this.x * vec.x, this.y * vec.y);
+	}
 	unitMultiply(m: number) {
 		this.x *= m;
 		this.y *= m;
 	}
-	returnMultiplied(n: number) {
-		return new Vector(this.x * n, this.y * n);
+	unitMultiplyReturn(num: number) {
+		return new Vector(this.x * num, this.y * num);
 	}
 	unitDivide(d: number) {
 		this.x /= d;

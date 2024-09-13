@@ -2,10 +2,12 @@ import { Constants } from "../shared/constants";
 import { Action, gameUpdate, godCommand, keyEvent, Message } from "../shared/Message";
 import { Game } from "./Game";
 import { sendMessage } from "./websockets";
+import { addGod, moveLeft, moveDown, moveUp, moveRight, godAddMass, godFollowShip, handleMouseMove, handleMouseClick, stopRight, stopUp, stopDown, stopLeft, godAddShip, godAddBlock, godAddPlayer, changeTicks, godRotateShip } from "./gameUserInteraction";
 
-const game = new Game();
+
+export const game = new Game();
 export function userJoinedGame(id: string) {
-	game.addGod(id);
+	addGod(id);
 }
 export function sendUpdate(id: string, update: gameUpdate) {
 	sendMessage(id, new Message(Constants.MSG_TYPES.GAME_UPDATE, update));
@@ -14,10 +16,10 @@ export function handleActions(actions: Action[]) {
 	actions.forEach((action) => {
 		switch (action.inputType) {
 			case Constants.INPUT_TYPES.MOUSE_MOVE:
-				game.handleMouseMove(action);
+				handleMouseMove(action);
 				break;
 			case Constants.INPUT_TYPES.MOUSE_CLICK:
-				game.handleMouseClick(action);
+				handleMouseClick(action);
 				break;
 			case Constants.INPUT_TYPES.GOD_COMMAND:
 				handleCommands(action);
@@ -35,16 +37,16 @@ function handleKeyDown(action: Action) {
 	const val = action.value as keyEvent;
 	switch (val.key) {
 		case "w":
-			game.moveUp(action.id);
+			moveUp(action.id);
 			break;
 		case "a":
-			game.moveLeft(action.id);
+			moveLeft(action.id);
 			break;
 		case "s":
-			game.moveDown(action.id);
+			moveDown(action.id);
 			break;
 		case "d":
-			game.moveRight(action.id);
+			moveRight(action.id);
 			break;
 	}
 }
@@ -52,16 +54,16 @@ function handleKeyUp(action: Action) {
 	const val = action.value as keyEvent;
 	switch (val.key) {
 		case "w":
-			game.stopUp(action.id);
+			stopUp(action.id);
 			break;
 		case "a":
-			game.stopLeft(action.id);
+			stopLeft(action.id);
 			break;
 		case "s":
-			game.stopDown(action.id);
+			stopDown(action.id);
 			break;
 		case "d":
-			game.stopRight(action.id);
+			stopRight(action.id);
 			break;
 	}
 }
@@ -70,14 +72,26 @@ function handleCommands(action: Action) {
 	const command = val.text.split(" ");
 	switch (command[0]) {
 		case "poly":
-			game.godAddBlock(action.id);
+			godAddBlock(action.id);
 			break;
 		case "player":
-			game.godAddPlayer(action.id);
+			godAddPlayer(action.id);
 			break;
 		case "ship":
-			game.godAddShip(action.id);
+			godAddShip(action.id);
+			break;
 		case "tps":
-			game.changeTicks(Number(command[1]));
+			changeTicks(Number(command[1]));
+			break;
+		case "r":
+			godRotateShip(action.id);
+			break;
+		case "mass":
+			godAddMass(action.id, command[1], command[2]);
+			break;
+		case "follow":
+			godFollowShip(action.id);
+			break;
+
 	}
 }
