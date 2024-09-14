@@ -61,6 +61,7 @@ export interface shipUpdate extends objectUpdate {
 	zeroPoints: Vector[];
 	missingZeros: number[];
 	masses: blockUpdate[];
+	ladder: Vector[];
 }
 export interface godUpdate extends objectUpdate {
 	placeY: number;

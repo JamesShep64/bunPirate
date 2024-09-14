@@ -2,7 +2,7 @@ import { Constants } from "../shared/constants";
 import { Action, gameUpdate, godCommand, keyEvent, Message } from "../shared/Message";
 import { Game } from "./Game";
 import { sendMessage } from "./websockets";
-import { addGod, moveLeft, moveDown, moveUp, moveRight, godAddMass, godFollowShip, handleMouseMove, handleMouseClick, stopRight, stopUp, stopDown, stopLeft, godAddShip, godAddBlock, godAddPlayer, changeTicks, godRotateShip } from "./gameUserInteraction";
+import { addGod, moveLeft, moveDown, moveUp, playerJump, godTogglePlayerGravity, moveRight, godClearMass, godAddMass, godFollowShip, handleMouseMove, handleMouseClick, stopRight, stopUp, stopDown, stopLeft, godAddShip, godAddBlock, godAddPlayer, changeTicks, godRotateShip, godFreezeShip } from "./gameUserInteraction";
 
 
 export const game = new Game();
@@ -48,6 +48,9 @@ function handleKeyDown(action: Action) {
 		case "d":
 			moveRight(action.id);
 			break;
+		case " ":
+			playerJump(action.id);
+			break;
 	}
 }
 function handleKeyUp(action: Action) {
@@ -77,6 +80,9 @@ function handleCommands(action: Action) {
 		case "player":
 			godAddPlayer(action.id);
 			break;
+		case "grav":
+			godTogglePlayerGravity(action.id);
+			break;
 		case "ship":
 			godAddShip(action.id);
 			break;
@@ -87,11 +93,16 @@ function handleCommands(action: Action) {
 			godRotateShip(action.id);
 			break;
 		case "mass":
-			godAddMass(action.id, command[1], command[2]);
+			if (command[1] == "clear")
+				godClearMass(action.id);
+			else
+				godAddMass(action.id, command[1], command[2]);
 			break;
 		case "follow":
 			godFollowShip(action.id);
 			break;
+		case "freeze":
+			godFreezeShip(action.id);
 
 	}
 }

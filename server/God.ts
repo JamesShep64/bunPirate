@@ -26,7 +26,8 @@ export class God extends Controllable {
 		this.placePoint.set(x, y);
 	}
 	update() {
-		super.update();
+		if (!this.controlledPlayer)
+			super.update();
 	}
 	clickedOnObject(objectPosition: Vector) {
 		if (Math.sqrt(((this.placePoint.x - objectPosition.x) ** 2) + (this.placePoint.y - objectPosition.y) ** 2) < 20) {

@@ -30,7 +30,7 @@ export function recordActions() {
 			input.focus();  // Focus the text box when Enter is pressed
 			event.stopPropagation();
 		}
-		if (event.key === 'w' || event.key === 'a' || event.key === 's' || event.key === 'd') {
+		if (event.key === 'w' || event.key === 'a' || event.key === 's' || event.key === 'd' || event.key === " ") {
 			handleKeyDown(event.key);
 		}
 

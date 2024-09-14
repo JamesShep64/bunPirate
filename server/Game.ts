@@ -4,7 +4,7 @@ import { Block } from "./Block";
 import { God } from "./God";
 import { sendUpdate } from "./users";
 import { Player } from "./Player";
-import { polygonPolygonCollision } from "./collisions";
+import { checkHalfPolygonPolygonCollision, polygonPolygonCollision } from "./collisions";
 import { PirateShip } from "./PirateShip";
 import { polygonShipCollision } from "./collisions";
 
@@ -28,9 +28,9 @@ export class Game {
   //************************************************************
   update() {
     Object.values(this.gods).forEach(god => god.update());
-    Object.values(this.players).forEach(player => player.update());
-    Object.values(this.blocks).forEach(block => block.update());
     Object.values(this.ships).forEach(ship => ship.update());
+    Object.values(this.blocks).forEach(block => block.update());
+    Object.values(this.players).forEach(player => player.update());
     //player block collision
     Object.values(this.players).forEach((player) => {
       Object.values(this.blocks).forEach((block) => {
@@ -45,8 +45,18 @@ export class Game {
       Object.values(this.ships).forEach((ship) => {
         const col = polygonShipCollision(player.hitBox, ship);
         if (col) {
-          player.physicsObject.addDisplacement(col);
+          player.physicsObject.addDisplacement(col.push);
+          if (col.onFloor) {
+            ship.players[player.id] = player;
+            player.applyFriction(ship.forward, ship.physicsObject, ship.bodyPoly);
+          }
         }
+        const onLadder = checkHalfPolygonPolygonCollision(player.hitBox, ship.ladder);
+        if (onLadder && (player.movingUp || player.movingDown)) {
+          player.onLadder = true;
+        }
+        if (!onLadder)
+          player.onLadder = false;
       })
     });
     //update the displacments of all physics objects

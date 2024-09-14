@@ -3,32 +3,23 @@ import { Constants } from "../shared/constants";
 import { Vector } from "../shared/Vector";
 export class Controllable {
   horizontalMove: Vector;
-  leftMove: Vector;
   movingLeft: boolean;
-  rightMove: Vector;
   movingRight: boolean;
   verticalMove: Vector;
-  upMove: Vector;
   movingUp: boolean;
-  downMove: Vector;
   movingDown: boolean;
   pos: Vector;
   constructor(x: number, y: number) {
-    this.horizontalMove = new Vector(0, 0);
-    this.leftMove = new Vector(-1, 0);
+    this.horizontalMove = new Vector(1, 0);
     this.movingLeft = false;
-    this.rightMove = new Vector(1, 0);
     this.movingRight = false;
-    this.verticalMove = new Vector(0, 0);
-    this.upMove = new Vector(0, -1);
+    this.verticalMove = new Vector(0, 1);
     this.movingUp = false;
-    this.downMove = new Vector(0, 1);
     this.movingDown = false;
     this.pos = new Vector(x, y);
   }
   moveLeft() {
     if (!this.movingRight) {
-      this.horizontalMove.setVec(this.leftMove);
       this.movingLeft = true;
     }
   }
@@ -39,7 +30,6 @@ export class Controllable {
 
   moveRight() {
     if (!this.movingLeft) {
-      this.horizontalMove.setVec(this.rightMove);
       this.movingRight = true;
     }
   }
@@ -50,7 +40,6 @@ export class Controllable {
 
   moveUp() {
     if (!this.movingDown) {
-      this.verticalMove.setVec(this.upMove);
       this.movingUp = true;
     }
   }
@@ -61,7 +50,6 @@ export class Controllable {
 
   moveDown() {
     if (!this.movingUp) {
-      this.verticalMove.setVec(this.downMove);
       this.movingDown = true;
     }
   }
@@ -70,9 +58,19 @@ export class Controllable {
     this.movingDown = false;
   }
   update() {
-    if (this.movingLeft || this.movingRight)
-      this.pos.add(this.horizontalMove.unitMultiplyReturn(Constants.VELOCITY_MULTIPLIER * 10));
-    if (this.movingUp || this.movingDown)
-      this.pos.add(this.verticalMove.unitMultiplyReturn(Constants.VELOCITY_MULTIPLIER * 10));
+    if (this.movingLeft || this.movingRight) {
+      if (this.movingRight)
+        this.pos.add(this.horizontalMove.unitMultiplyReturn(Constants.VELOCITY_MULTIPLIER * 10));
+      if (this.movingLeft)
+        this.pos.subtract(this.horizontalMove.unitMultiplyReturn(Constants.VELOCITY_MULTIPLIER * 10));
+    }
+    if (this.movingUp || this.movingDown) {
+      if (this.movingDown) {
+        this.pos.add(this.verticalMove.unitMultiplyReturn(Constants.VELOCITY_MULTIPLIER * 10));
+      }
+      if (this.movingUp) {
+        this.pos.subtract(this.verticalMove.unitMultiplyReturn(Constants.VELOCITY_MULTIPLIER * 10));
+      }
+    }
   }
 }

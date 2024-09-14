@@ -22,12 +22,14 @@ export function handleMouseMove(action: Action) {
 }
 export function handleMouseClick(action: Action) {
   const god = game.gods[action.id];
-  godTakeControl(god, god.controlledPlayer, game.players, "Player");
+  const first = godTakeControl(god, god.controlledPlayer, game.players, "Player");
+  if (first)
+    return;
   godTakeControl(god, god.controlledShip, game.ships, "PirateShip");
 }
 function godTakeControl(god: God, godControllObject: PirateShip | Player | undefined, objectDict: { [key: string]: object }, selectType: string) {
   const clickedObject = Object.values(objectDict).find((object) => { var o = object as Player; return god.clickedOnObject(o.pos); }) as Player;
-  giveGodControl(god, godControllObject, objectDict, clickedObject, selectType);
+  return giveGodControl(god, godControllObject, objectDict, clickedObject, selectType);
 }
 
 function giveGodControl(god: God, godControllObject: PirateShip | Player | undefined, objectDict: { [key: string]: object }, givenObject: Player | PirateShip | undefined, selectType: string) {
@@ -36,12 +38,14 @@ function giveGodControl(god: God, godControllObject: PirateShip | Player | undef
     objectDict[godControllObject.id] = godControllObject;
     godControllObject.controlled = false;
   }
+  god.setControlledObject(undefined, selectType);
   godControllObject = undefined;
   if (givenObject && !givenObject.controlled) {
     delete objectDict[givenObject.id];
     objectDict[god.id] = givenObject;
     god.setControlledObject(givenObject, selectType);
     givenObject.controlled = true;
+    return true;
   }
 }
 
@@ -77,7 +81,9 @@ export function stopRight(id: string) {
   game.gods[id]?.stopRight();
   game.players[id]?.stopRight();
 }
-
+export function playerJump(id: string) {
+  game.players[id]?.jump();
+}
 export function godAddBlock(id: string) {
   const blockID = generateUniqueId({ length: 8 });
   game.blocks[blockID] = new Block(blockID, game.gods[id].placePoint.x, game.gods[id].placePoint.y, 50, 50);
@@ -85,6 +91,10 @@ export function godAddBlock(id: string) {
 export function godAddPlayer(id: string) {
   const playerID = generateUniqueId({ length: 8 });
   game.players[playerID] = new Player(playerID, game.gods[id].placePoint.x, game.gods[id].placePoint.y);
+}
+export function godTogglePlayerGravity(id: string) {
+  if (game.gods[id].controlledPlayer)
+    game.gods[id].controlledPlayer.toggleGravity();
 }
 export function godRotateShip(id: string) {
   if (game.gods[id].controlledShip) {
@@ -101,6 +111,14 @@ export function godAddMass(id: string, pos: string, weight: string) {
   if (game.gods[id].controlledShip)
     game.gods[id].controlledShip.addMass(Number(pos), Number(weight));
 }
+export function godClearMass(id: string) {
+  if (game.gods[id].controlledShip)
+    game.gods[id].controlledShip.clearMass();
+}
 export function godFollowShip(id: string) {
   game.gods[id].followShip();
+}
+export function godFreezeShip(id: string) {
+  if (game.gods[id].controlledShip)
+    game.gods[id].controlledShip.toggleFreeze();
 }

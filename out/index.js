@@ -34,17 +34,16 @@ var Constants = {
   PLAYER_FIRE_COOLDOWN: 0.25,
   BLOCK_SIZE: 20,
   SCORE_PER_SECOND: 1,
-  PLAYER_SIZE: 25,
   PI: 3.14,
   VELOCITY_MULTIPLIER: 2.5,
   MAP_SIZE: 3000,
-  MAP_HEIGHT: 3000,
-  MAP_WIDTH: 6000,
-  PLAYER_HEIGHT: 50,
+  MAP_HEIGHT: 5000,
+  MAP_WIDTH: 1e4,
+  PLAYER_HEIGHT: 40,
   PLAYER_WIDTH: 25,
   BLOCK_HEIGHT: 30,
   BLOCK_WIDTH: 25,
-  MAX_GRAVITY: 2,
+  MAX_GRAVITY: 4,
   GRAVITY_MULT: 0.1,
   MSG_TYPES: {
     INPUT: "user input",
@@ -244,57 +243,72 @@ function initializeDrawing(meGod, mePlayer) {
   context.save();
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.fillStyle = "red";
-  if (meGod)
+  if (meGod && !mePlayer)
     drawBackground(meGod.x, meGod.y);
   else
     drawBackground(mePlayer.x, mePlayer.y);
 }
 function drawBackground(camX, camY) {
+  var canvasX = canvas.width / 2 - camX;
+  var canvasY = canvas.height / 2 - camY;
+  var grd = context.createLinearGradient(canvasX, canvasY - Constants.MAP_HEIGHT / 2, canvasX, Constants.MAP_HEIGHT / 2 + canvasY + 1000);
+  grd.addColorStop(0.8, "#34cceb");
+  grd.addColorStop(0.35, "#0440cc");
+  grd.addColorStop(0.2, "black");
+  context.fillStyle = grd;
+  context.fillRect(0, 0, canvas.width, canvas.height);
   context.save();
   context.translate(-camX + canvas.width / 2, -camY + canvas.height / 2);
-  for (var x = camX - canvas.width / 2 - 400;x < camX + canvas.width / 2 + 400; x += 50) {
-    for (var y = camY - canvas.height / 2 - 400;y < camY + canvas.height / 2 + 400; y += 50) {
+  for (var x = camX - canvas.width / 2 - 400;x < camX + canvas.width / 2 + 400; x += 80) {
+    for (var y = camY - canvas.height / 2 - 400;y < camY + canvas.height / 2 + 400; y += 80) {
       context.save();
-      x = Math.ceil(x / 50) * 50;
-      y = Math.ceil(y / 50) * 50;
-      var xCheck = x - 16550;
-      var yCheck = y - 16550;
+      x = Math.ceil(x / 80) * 80;
+      y = Math.ceil(y / 80) * 80;
+      var shift = -17520;
+      var xCheck = x + shift;
+      var yCheck = y + shift;
       context.translate(x, y);
-      if (yCheck < -16050 && (xCheck % 1250 == 0 && yCheck % 2350 == 0 || xCheck % 3500 == 0 && yCheck % 3150 == 0 || xCheck % 1000 == 0 && yCheck % 900 == 0 || xCheck % 3350 == 0 && yCheck % 700 == 0)) {
-        context.beginPath();
-        context.fillStyle = "#FFDB51";
-        context.beginPath();
-        const a = 5;
-        context.moveTo(108 / a, 0);
-        context.lineTo(141 / a, 70 / a);
-        context.lineTo(218 / a, 78.3 / a);
-        context.lineTo(162 / a, 131 / a);
-        context.lineTo(175 / a, 205 / a);
-        context.lineTo(108 / a, 170 / a);
-        context.lineTo(41.2 / a, 205 / a);
-        context.lineTo(55 / a, 131 / a);
-        context.lineTo(1 / a, 78 / a);
-        context.lineTo(75 / a, 68 / a);
-        context.lineTo(108 / a, 0);
-        context.closePath();
-        context.fill();
-      }
-      if (yCheck > -16850 && (xCheck % 1250 == 0 && yCheck % 2350 == 0 || xCheck % 3500 == 0 && yCheck % 3150 == 0 || xCheck % 1000 == 0 && yCheck % 900 == 0 || xCheck % 3350 == 0 && yCheck % 700 == 0)) {
-        context.beginPath();
-        context.moveTo(170, 80);
-        context.bezierCurveTo(130, 100, 130, 150, 230, 150);
-        context.bezierCurveTo(250, 180, 320, 180, 340, 150);
-        context.bezierCurveTo(420, 150, 420, 120, 390, 100);
-        context.bezierCurveTo(430, 40, 370, 30, 340, 50);
-        context.bezierCurveTo(320, 5, 250, 20, 250, 50);
-        context.bezierCurveTo(200, 5, 150, 20, 170, 80);
-        context.closePath();
-        context.fillStyle = "blue";
-        context.fill();
+      if (xCheck % 5280 == 0 && yCheck % 2320 == 0 || xCheck % 3520 == 0 && yCheck % 3120 == 0 || xCheck % 3200 == 0 && yCheck % 2080 == 0 || xCheck % 8320 == 0 && yCheck % 4240 == 0 || xCheck % 2880 == 0 && yCheck % 5280 == 0 || xCheck % 4400 == 0 && yCheck % 3280 == 0 || xCheck % 4320 == 0 && yCheck % 2400 == 0 || xCheck % 4800 == 0 && yCheck % 1280 == 0 || xCheck % 2240 == 0 && yCheck % 3000 == 0 || xCheck % 1120 == 0 && yCheck % 4000 == 0) {
+        if (yCheck < shift + Constants.MAP_HEIGHT * 0.15) {
+          context.beginPath();
+          context.fillStyle = "#FFDB51";
+          context.beginPath();
+          const a = 5;
+          context.moveTo(108 / a, 0);
+          context.lineTo(141 / a, 70 / a);
+          context.lineTo(218 / a, 78.3 / a);
+          context.lineTo(162 / a, 131 / a);
+          context.lineTo(175 / a, 205 / a);
+          context.lineTo(108 / a, 170 / a);
+          context.lineTo(41.2 / a, 205 / a);
+          context.lineTo(55 / a, 131 / a);
+          context.lineTo(1 / a, 78 / a);
+          context.lineTo(75 / a, 68 / a);
+          context.lineTo(108 / a, 0);
+          context.closePath();
+          context.fill();
+        }
+        if (yCheck > shift + Constants.MAP_HEIGHT * 0.15) {
+          context.beginPath();
+          context.moveTo(170, 80);
+          context.bezierCurveTo(130, 100, 130, 150, 230, 150);
+          context.bezierCurveTo(250, 180, 320, 180, 340, 150);
+          context.bezierCurveTo(420, 150, 420, 120, 390, 100);
+          context.bezierCurveTo(430, 40, 370, 30, 340, 50);
+          context.bezierCurveTo(320, 5, 250, 20, 250, 50);
+          context.bezierCurveTo(200, 5, 150, 20, 170, 80);
+          context.closePath();
+          context.fillStyle = "white";
+          context.fill();
+        }
       }
       context.restore();
     }
   }
+  context.beginPath();
+  context.strokeStyle = "red";
+  context.lineWidth = 5;
+  context.strokeRect(-Constants.MAP_WIDTH / 2, -Constants.MAP_HEIGHT / 2, Constants.MAP_WIDTH, Constants.MAP_HEIGHT);
   context.restore();
   context.fillStyle = "red";
 }
@@ -410,6 +424,8 @@ function drawShip(ship) {
   }
   context.closePath();
   context.stroke();
+  context.fillStyle = "rgb(140, 75, 25)";
+  context.fill();
   context.beginPath();
   var o = 0;
   for (var i = 0;i < ship.points.length; i++) {
@@ -422,12 +438,19 @@ function drawShip(ship) {
   }
   context.closePath();
   context.stroke();
-  if (ship.masses)
+  drawPolygon(0, 0, ship.ladder);
+  context.fillStyle = "red";
+  if (ship.masses) {
     ship.masses.forEach((mass) => {
       context.beginPath();
       context.arc(mass.points[0].x, mass.points[0].y, 10, 0, 2 * Math.PI);
       context.fill();
     });
+  }
+  var farLeft = -230;
+  var farRight = 230;
+  context.beginPath();
+  context.strokeRect(farLeft, farLeft, farRight - farLeft, farRight - farLeft);
   context.restore();
 }
 var cameraPosition = { x: 0, y: 0 };
@@ -447,7 +470,7 @@ function recordActions() {
       input.focus();
       event.stopPropagation();
     }
-    if (event.key === "w" || event.key === "a" || event.key === "s" || event.key === "d") {
+    if (event.key === "w" || event.key === "a" || event.key === "s" || event.key === "d" || event.key === " ") {
       handleKeyDown(event.key);
     }
   });

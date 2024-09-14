@@ -22,7 +22,7 @@ export class Vector {
 		this.x = other.x;
 		this.y = other.y;
 	}
-	unit() {
+	unitReturn() {
 		return new Vector(this.x / Math.sqrt(this.x * this.x + this.y * this.y), this.y / Math.sqrt(this.x * this.x + this.y * this.y));
 	}
 	multiply(vec: Vector) {
@@ -61,5 +61,8 @@ export class Vector {
 	}
 	magnatude() {
 		return Math.sqrt(this.x * this.x + this.y * this.y);
+	}
+	serializeForUpdates() {
+		return { x: this.x, y: this.y };
 	}
 }

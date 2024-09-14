@@ -30,6 +30,7 @@ export class Polygon {
     }
     this.direction += angle;
     this.direction %= 2 * Constants.PI;
+    return { cos, sin };
   }
   displace(push: Vector) {
     this.pos.add(push);
