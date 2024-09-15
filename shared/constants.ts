@@ -19,7 +19,9 @@ export const Constants = {
 
   MSG_TYPES: {
     INPUT: 'user input',
-    JOIN_GAME: 'join_game',
+    GOD_JOINED: 'god joined game',
+    PLAYER_JOINED: 'player joined game',
+    USER_CONNECTED: 'user connected',
     GAME_UPDATE: 'update',
     GAME_OVER: 'dead',
     CREATE_LOBBY: 'create_lobby',
@@ -30,6 +32,8 @@ export const Constants = {
     CREATOR_LEFT_GAME: 'creator_left_game',
     BECOME_LEADER: 'become-leader',
     WS_ID: 'websocket id',
+    DISCONNECT: 'dc',
+    ADD_CREW: 'lobby join game',
   },
   INPUT_TYPES: {
     MOUSE_MOVE: 'mouse move',

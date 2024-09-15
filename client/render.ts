@@ -56,7 +56,7 @@ function drawBackground(camX: number, camY: number) {
 			var xCheck = x + shift;
 			var yCheck = y + shift;
 			context.translate(x, y);
-			if ((xCheck % 5280 == 0 && yCheck % 2320 == 0) || (xCheck % 3520 == 0 && yCheck % 3120 == 0) || (xCheck % 3200 == 0 && yCheck % 2080 == 0) || (xCheck % 8320 == 0 && yCheck % 4240 == 0) || (xCheck % 2880 == 0 && yCheck % 5280 == 0) || (xCheck % 4400 == 0 && yCheck % 3280 == 0) || (xCheck % 4320 == 0 && yCheck % 2400 == 0) || (xCheck % 4800 == 0 && yCheck % 1280 == 0) || (xCheck % 2240 == 0 && yCheck % 3000 == 0) || (xCheck % 1120 == 0 && yCheck % 4000 == 0)) {
+			if ((xCheck % 4240 == 0 && yCheck % 2320 == 0) || (xCheck % 3520 == 0 && yCheck % 3120 == 0) || (xCheck % 3200 == 0 && yCheck % 2080 == 0) || (xCheck % 8320 == 0 && yCheck % 4240 == 0) || (xCheck % 2880 == 0 && yCheck % 2820 == 0) || (xCheck % 4400 == 0 && yCheck % 3280 == 0) || (xCheck % 3280 == 0 && yCheck % 2400 == 0) || (xCheck % 2720 == 0 && yCheck % 1280 == 0) || (xCheck % 2240 == 0 && yCheck % 3000 == 0) || (xCheck % 1120 == 0 && yCheck % 4000 == 0) || (xCheck % 1120 == 0 && yCheck % 3040 == 0) || (xCheck % 2160 == 0 && yCheck % 3440 == 0)) {
 				if (((yCheck < shift + Constants.MAP_HEIGHT * .15))) {
 					context.beginPath();
 					context.fillStyle = "#FFDB51";
@@ -76,7 +76,7 @@ function drawBackground(camX: number, camY: number) {
 					context.closePath();
 					context.fill();
 				}
-				if ((yCheck > shift + Constants.MAP_HEIGHT * .15)) {
+				if ((yCheck > shift + Constants.MAP_HEIGHT * .10)) {
 					context.beginPath();
 					context.moveTo(170, 80);
 					context.bezierCurveTo(130, 100, 130, 150, 230, 150);
@@ -168,6 +168,7 @@ function drawShips(ships: shipUpdate[]) {
 	});
 }
 export function startRendering() {
+	canvas.classList.remove("hidden");
 	setInterval(render, 1000 / 90);
 }
 function drawGod(x: number, y: number) {

@@ -1,7 +1,6 @@
 //actions are user inputs to be sent to the server
 //messages are sent from the server
 
-import { Message } from "../shared/Message";
 //handles the messages sent from the server to the client, has a dictionarry of functions which are paired with a message type from Constants, handle message is called whenever a message is recieved from the server.
 export const serverMessageHandler = {
 	// Initialize the messageFunctionPairs object

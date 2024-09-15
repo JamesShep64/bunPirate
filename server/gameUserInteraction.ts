@@ -25,7 +25,10 @@ export function handleMouseClick(action: Action) {
   const first = godTakeControl(god, god.controlledPlayer, game.players, "Player");
   if (first)
     return;
-  godTakeControl(god, god.controlledShip, game.ships, "PirateShip");
+  const holder = god.controlledShip;
+  const second = godTakeControl(god, god.controlledShip, game.ships, "PirateShip");
+  if (!second)
+    god.controlledShip = holder;
 }
 function godTakeControl(god: God, godControllObject: PirateShip | Player | undefined, objectDict: { [key: string]: object }, selectType: string) {
   const clickedObject = Object.values(objectDict).find((object) => { var o = object as Player; return god.clickedOnObject(o.pos); }) as Player;
@@ -96,9 +99,9 @@ export function godTogglePlayerGravity(id: string) {
   if (game.gods[id].controlledPlayer)
     game.gods[id].controlledPlayer.toggleGravity();
 }
-export function godRotateShip(id: string) {
+export function godRotateShip(id: string, angle: number) {
   if (game.gods[id].controlledShip) {
-    game.gods[id].controlledShip.rotate(1);
+    game.gods[id].controlledShip.rotate(angle);
   }
 }
 export function godAddShip(id: string) {

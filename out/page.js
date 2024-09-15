@@ -662,6 +662,35 @@ playButton.onclick = () => {
 };
 var lobby = { id: "", crew: [] };
 var ID;
-export {
-  ID
-};
+
+// ../client/page.ts
+function usernameMenu() {
+  usernameInput2.focus();
+  joinButton2.onclick = () => {
+    usernameInput2.placeholder = "paste URL here";
+    createButton2.classList.add("hidden");
+  };
+  createButton2.onclick = () => {
+    var name = usernameInput2.textContent;
+    var id = ID;
+    sendMessage(new Message(Constants.MSG_TYPES.CREATE_LOBBY, new ClientPayload(id, { name })));
+    serverMessageHandler.on(Constants.MSG_TYPES.CREATE_LOBBY, (content) => {
+      joinButton2.classList.add("hidden");
+      createButton2.classList.add("hidden");
+    });
+  };
+}
+var playMenu2 = document.getElementById("play-menu");
+var consoleInput2 = document.getElementById("console-input");
+var usernameInput2 = document.getElementById("username-input");
+var joinButton2 = document.getElementById("join-button");
+var createButton2 = document.getElementById("create-button");
+var fullPath2 = window.location.pathname;
+var fileName2 = fullPath2.substring(fullPath2.lastIndexOf("/") + 1);
+if (fileName2 == "godJoin") {
+  playMenu2.classList.add("hidden");
+} else if (fileName2 == "") {
+  consoleInput2.classList.add("hidden");
+  usernameMenu();
+} else {
+}

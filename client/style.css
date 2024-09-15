@@ -12,6 +12,9 @@ html {
     width: 100%;
 }
 
+.hidden {
+    display: none !important;
+}
 
 canvas {
     position: absolute;
@@ -29,6 +32,40 @@ canvas {
     transform: translate(-50%, -50%);
     z-index: 2;
 }
+
+.menu {
+    padding: 10px 15px;
+    min-width: 280px;
+}
+
+.menu {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translateY(-50%) translateX(-50%);
+    padding: 20px 30px;
+    background-color: white;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border-radius: 5px;
+    text-align: center;
+}
+
+.menu p {
+    margin-bottom: 0;
+}
+
+.menu input {
+    font-size: 18px;
+    outline: none;
+    border: none;
+    border-bottom: 1px solid black;
+    margin-bottom: 5px;
+    padding: 3px;
+    text-align: center;
+}
+
 
 #console-input {
     padding: 10px;

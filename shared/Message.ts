@@ -39,6 +39,15 @@ export interface mouseEvent {
 export interface keyEvent {
 	key: string;
 }
+export interface userPlayer {
+	name: string;
+}
+export interface playerJoinLobby extends userPlayer {
+	lobbyID: string;
+}
+export interface lobbyID {
+	id: string;
+};
 export interface gameUpdate {
 	time: number;
 	meGod: godUpdate;
@@ -47,6 +56,15 @@ export interface gameUpdate {
 	otherPlayers: playerUpdate[];
 	blocks: blockUpdate[];
 	ships: shipUpdate[];
+}
+export interface lobbyUpdate {
+	crew: string[];
+	captain: string;
+	ids: string[];
+}
+export interface addLobby {
+	id: string;
+	crew: string[];
 }
 export interface objectUpdate {
 	id: string;

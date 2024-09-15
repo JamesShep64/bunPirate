@@ -22,9 +22,11 @@ input.addEventListener('keyup', (e) => {
 
 
 export var toggleInterpolate = true;
-export function recordActions() {
+export function recordMouse() {
 	window.addEventListener("mousemove", handleMouseMove);
 	window.addEventListener("click", handleClick);
+}
+export function recordActions() {
 	window.addEventListener('keydown', (event) => {
 		if (event.key === 'Enter') {
 			input.focus();  // Focus the text box when Enter is pressed

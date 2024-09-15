@@ -10,11 +10,77 @@
 </head>
 
 <body>
-    <canvas id="game-canvas"></canvas>
-    <div class="centered-container">
+    <div id="username-menu" class="menu">
+        <h1>EPIC PIRATE BATTLES</h1>
+        <p id='lobby-creator' class='hidden'>
+        </p>
+        <input type="text" id="username-input" placeholder="Username" />
+        <div>
+            <button id="create-button">CREATE LOBBY</button>
+            <button id="join-button">JOIN LOBBY</button>
+            <style>
+                display : inline-block;
+            </style>
+        </div>
+
+    </div>
+
+    <div id="play-menu" class="menu hidden">
+        <h1 id='instructions'>CONTROLS: W,A,S,D,SPACE </h1>
+        <p></p>
+        <p id="lobby-link">
+        </p>
+        <table id="lobby-board">
+            <thead>
+                <tr>
+                    <th>YOUR CREW</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+        <div id="'buttons">
+            <button id="play-button">PLAY</button>
+        </div>
+        <style>
+            /* Style for the table */
+            table {
+                width: 50%;
+                border-collapse: collapse;
+                /* Remove extra space between cells */
+            }
+
+            /* Style for each row */
+            tr {
+                border: 2px solid black;
+                /* Border around each row */
+            }
+
+            /* Style for table headers */
+            th {
+                background-color: lightgray;
+                /* Optional: to distinguish header */
+                padding: 10px;
+                /* Padding inside the header cells */
+                text-align: left;
+                /* Align text in header cells */
+            }
+
+            /* Style for table cells */
+            td {
+                padding: 10px;
+                /* Padding inside the cells */
+                border-top: 1px solid black;
+                /* Optional: top border between cells */
+            }
+        </style>
+    </div>
+
+    <canvas id="game-canvas" class="hidden"></canvas>
+    <div class="centered-container" id="console">
         <input type="text" id="console-input" placeholder="Type here...">
     </div>
-    <script type='module' src='/script.js'></script>
+    <script type="module" src='/script.js'></script>
 </body>
 
 </html>

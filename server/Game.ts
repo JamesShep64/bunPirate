@@ -7,6 +7,7 @@ import { Player } from "./Player";
 import { checkHalfPolygonPolygonCollision, polygonPolygonCollision } from "./collisions";
 import { PirateShip } from "./PirateShip";
 import { polygonShipCollision } from "./collisions";
+import { Constants } from "../shared/constants";
 
 export class Game {
   users: string[];
@@ -23,9 +24,29 @@ export class Game {
     this.users = [];
     this.intervalID = setInterval(this.update.bind(this), 1000 / 30);
   }
-  //these functions have to do with the god users
-  //***********************************************************
-  //************************************************************
+  disconnect(id: string) {
+    var us = this.users;
+    var i = us.indexOf(id);
+    this.users.splice(i, 1);
+    if (this.gods[id])
+      delete this.gods[id];
+    if (this.players[id])
+      delete this.players[id];
+  }
+  addCrew(crew: string[]) {
+    var width = Math.random() * Constants.MAP_WIDTH / 2;
+    var height = Math.random() * Constants.MAP_HEIGHT / 2;
+    if (Math.random() < .5)
+      width *= -1;
+    if (Math.random() < .5)
+      width *= -1;
+    const shipID = generateUniqueId({ length: 8 });
+    this.ships[shipID] = new PirateShip(shipID, width, height);
+    for (var i = 0; i < crew.length; i++) {
+      this.players[crew[i]] = new Player(crew[i], width - i * 10, height - 50);
+      this.users.push(crew[i]);
+    }
+  }
   update() {
     Object.values(this.gods).forEach(god => god.update());
     Object.values(this.ships).forEach(ship => ship.update());
@@ -64,7 +85,8 @@ export class Game {
     Object.values(this.blocks).forEach(block => block.physicsObject.updateDisplace());
     //send updates to all users
     this.users.forEach((id: string) => {
-      this.createUpdate(id);
+      if (id)
+        this.createUpdate(id);
     });
 
   }

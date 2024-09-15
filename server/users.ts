@@ -3,11 +3,49 @@ import { Action, gameUpdate, godCommand, keyEvent, Message } from "../shared/Mes
 import { Game } from "./Game";
 import { sendMessage } from "./websockets";
 import { addGod, moveLeft, moveDown, moveUp, playerJump, godTogglePlayerGravity, moveRight, godClearMass, godAddMass, godFollowShip, handleMouseMove, handleMouseClick, stopRight, stopUp, stopDown, stopLeft, godAddShip, godAddBlock, godAddPlayer, changeTicks, godRotateShip, godFreezeShip } from "./gameUserInteraction";
-
+import generateUniqueId from "generate-unique-id";
+import { Lobby } from "./Lobby";
+import { User } from "./User";
 
 export const game = new Game();
-export function userJoinedGame(id: string) {
+const lobbies = {} as { [key: string]: Lobby };
+const users = {} as { [key: string]: User };
+export const lobbyLinks = [] as string[];
+export function godJoinedGame(id: string) {
+	users[id] = new User(id, "");
 	addGod(id);
+}
+export function userCreateLobby(id: string, name: string) {
+	users[id] = new User(id, name);
+	var lobbyID = generateUniqueId({ length: 8 });
+	lobbies[lobbyID] = new Lobby(lobbyID, users[id]);
+	users[id].lobby = lobbies[lobbyID];
+	lobbyLinks.push(lobbyID);
+	return lobbyID;
+}
+export function userJoinLobby(lobbyID: string, id: string, name: string) {
+	users[id] = new User(id, name);
+	lobbies[lobbyID].addUser(users[id]);
+	users[id].lobby = lobbies[lobbyID];
+}
+export function handleDisconnect(id: string) {
+	game.disconnect(id);
+	if (users[id]?.lobby) {
+		users[id].lobby.removeUser(id);
+	}
+}
+export function deleteLobby(lobbyID: string) {
+	delete lobbies[lobbyID];
+	const index = lobbyLinks.indexOf(lobbyID);
+	lobbyLinks.splice(index, 1);
+}
+export function addCrew(lobbyID: string, crew: string[]) {
+	game.addCrew(crew);
+	console.log(crew);
+	crew.forEach(id => {
+		if (id)
+			sendMessage(id, new Message(Constants.MSG_TYPES.PLAYER_JOINED, {}));
+	});
 }
 export function sendUpdate(id: string, update: gameUpdate) {
 	sendMessage(id, new Message(Constants.MSG_TYPES.GAME_UPDATE, update));
@@ -90,7 +128,7 @@ function handleCommands(action: Action) {
 			changeTicks(Number(command[1]));
 			break;
 		case "r":
-			godRotateShip(action.id);
+			godRotateShip(action.id, Number(command[1]));
 			break;
 		case "mass":
 			if (command[1] == "clear")
