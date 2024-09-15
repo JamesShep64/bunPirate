@@ -3,7 +3,7 @@ import generateUniqueId from "generate-unique-id";
 import { Action, addLobby, ClientPayload, lobbyID, lobbyUpdate, Message, playerJoinLobby, userPlayer } from "../shared/Message";
 import { Constants } from "../shared/constants";
 import { SocketHandling } from "./messaging";
-import { godJoinedGame, handleActions, handleDisconnect, userCreateLobby, lobbyLinks, userJoinLobby, addCrew } from "./users";
+import { godJoinedGame, handleActions, handleDisconnect, userCreateLobby, lobbyLinks, userJoinLobby, addCrew, addStraggler } from "./users";
 Bun.build({
   entrypoints: ['../client/index.ts', '../client/page.ts'],
   outdir: '../out/',
@@ -98,10 +98,20 @@ function setPayLoadFunctionPairs() {
   //add lobby to game
   SocketHandling.on(Constants.MSG_TYPES.ADD_CREW, (payload: ClientPayload) => {
     const lobby = payload.data as addLobby;
-    addCrew(lobby.id, lobby.crew);
+    addCrew(lobby.id);
   });
   //handle disconnect
-  SocketHandling.on(Constants.MSG_TYPES.DISCONNECT, (payload: ClientPayload) => { handleDisconnect(payload.id); SocketHandling.removeSocket(payload.id); });
+  SocketHandling.on(Constants.MSG_TYPES.DISCONNECT, (payload: ClientPayload) => {
+    handleDisconnect(payload.id);
+    SocketHandling.removeSocket(payload.id);
+  });
+  SocketHandling.on(Constants.MSG_TYPES.ADD_STRAGGLER, (payload: ClientPayload) => {
+    const lobby = payload.data as addLobby;
+    addStraggler(lobby.id, payload.id);
+    sendMessage(payload.id, new Message(Constants.MSG_TYPES.PLAYER_JOINED, {}));
+  });
+
+
 }
 console.log(`Listening on localhost:${serverInstance.port}`);
 

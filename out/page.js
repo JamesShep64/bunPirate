@@ -30,6 +30,7 @@ var Constants = {
     JOINED_CREW: "joined_crew",
     CREATOR_JOINED_GAME: "creator_joined_game",
     CREATOR_LEFT_GAME: "creator_left_game",
+    ADD_STRAGGLER: "add to lobby",
     BECOME_LEADER: "become-leader",
     WS_ID: "websocket id",
     DISCONNECT: "dc",
@@ -465,9 +466,9 @@ window.addEventListener("resize", setCanvasDimensions);
 // ../client/inputs.ts
 function recordMouse() {
   window.addEventListener("mousemove", handleMouseMove);
+  window.addEventListener("click", handleClick);
 }
 function recordActions() {
-  window.addEventListener("click", handleClick);
   window.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       input.focus();
@@ -623,6 +624,7 @@ if (fileName == "godJoin") {
   consoleInput.classList.add("hidden");
   usernameInput.focus();
   joinButton.onclick = () => {
+    joinButton.blur();
     usernameInput.placeholder = "paste URL here";
     createButton.classList.add("hidden");
   };
@@ -649,6 +651,14 @@ if (fileName == "godJoin") {
     userMenu.classList.add("hidden");
     playMenu.classList.remove("hidden");
     lobby.id = lobbyID;
+    serverMessageHandler.on(Constants.MSG_TYPES.ADD_STRAGGLER, (content) => {
+      const id2 = ID;
+      playButton.classList.remove("hidden");
+      playButton.onclick = () => {
+        sendMessage(new Message(Constants.MSG_TYPES.ADD_STRAGGLER, new ClientPayload(id2, lobby)));
+        playMenu.classList.add("hidden");
+      };
+    });
   };
 }
 serverMessageHandler.on(Constants.MSG_TYPES.LOBBY_UPDATE, (content) => {

@@ -64,7 +64,6 @@ export interface lobbyUpdate {
 }
 export interface addLobby {
 	id: string;
-	crew: string[];
 }
 export interface objectUpdate {
 	id: string;

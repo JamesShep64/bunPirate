@@ -66,6 +66,7 @@ else if (fileName == "") {
   consoleInput.classList.add("hidden");
   usernameInput.focus();
   joinButton.onclick = () => {
+    joinButton.blur();
     usernameInput.placeholder = "paste URL here";
     createButton.classList.add("hidden");
   };
@@ -94,6 +95,14 @@ else {
     userMenu.classList.add("hidden");
     playMenu.classList.remove("hidden");
     lobby.id = lobbyID;
+    serverMessageHandler.on(Constants.MSG_TYPES.ADD_STRAGGLER, (content: lobbyUpdate) => {
+      const id = ID as string;
+      playButton.classList.remove("hidden");
+      playButton.onclick = () => {
+        sendMessage(new Message(Constants.MSG_TYPES.ADD_STRAGGLER, new ClientPayload(id, lobby)));
+        playMenu.classList.add("hidden");
+      }
+    });
   }
 }
 serverMessageHandler.on(Constants.MSG_TYPES.LOBBY_UPDATE, (content: lobbyUpdate) => {

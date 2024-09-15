@@ -27,6 +27,13 @@ export function userJoinLobby(lobbyID: string, id: string, name: string) {
 	users[id] = new User(id, name);
 	lobbies[lobbyID].addUser(users[id]);
 	users[id].lobby = lobbies[lobbyID];
+	if (lobbies[lobbyID].shipID) {
+		sendMessage(id, new Message(Constants.MSG_TYPES.ADD_STRAGGLER, {}));
+	}
+}
+export function addStraggler(lobbyID: string, id: string) {
+
+	game.addStraggler(id, lobbies[lobbyID]);
 }
 export function handleDisconnect(id: string) {
 	game.disconnect(id);
@@ -35,14 +42,14 @@ export function handleDisconnect(id: string) {
 	}
 }
 export function deleteLobby(lobbyID: string) {
+	game.removeCrew(lobbies[lobbyID]);
 	delete lobbies[lobbyID];
 	const index = lobbyLinks.indexOf(lobbyID);
 	lobbyLinks.splice(index, 1);
 }
-export function addCrew(lobbyID: string, crew: string[]) {
-	game.addCrew(crew);
-	console.log(crew);
-	crew.forEach(id => {
+export function addCrew(lobbyID: string) {
+	game.addCrew(lobbies[lobbyID]);
+	Object.keys(lobbies[lobbyID].users).forEach(id => {
 		if (id)
 			sendMessage(id, new Message(Constants.MSG_TYPES.PLAYER_JOINED, {}));
 	});

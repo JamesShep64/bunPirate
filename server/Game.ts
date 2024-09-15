@@ -4,10 +4,11 @@ import { Block } from "./Block";
 import { God } from "./God";
 import { sendUpdate } from "./users";
 import { Player } from "./Player";
-import { checkHalfPolygonPolygonCollision, polygonPolygonCollision } from "./collisions";
+import { checkHalfPolygonPolygonCollision, polygonPolygonCollision, shipShipCollision } from "./collisions";
 import { PirateShip } from "./PirateShip";
 import { polygonShipCollision } from "./collisions";
 import { Constants } from "../shared/constants";
+import { Lobby } from "./Lobby";
 
 export class Game {
   users: string[];
@@ -33,7 +34,7 @@ export class Game {
     if (this.players[id])
       delete this.players[id];
   }
-  addCrew(crew: string[]) {
+  addCrew(lobby: Lobby) {
     var width = Math.random() * Constants.MAP_WIDTH / 2;
     var height = Math.random() * Constants.MAP_HEIGHT / 2;
     if (Math.random() < .5)
@@ -41,11 +42,31 @@ export class Game {
     if (Math.random() < .5)
       width *= -1;
     const shipID = generateUniqueId({ length: 8 });
+    const crew = Object.keys(lobby.users);
     this.ships[shipID] = new PirateShip(shipID, width, height);
+    lobby.shipID = shipID;
     for (var i = 0; i < crew.length; i++) {
       this.players[crew[i]] = new Player(crew[i], width - i * 10, height - 50);
       this.users.push(crew[i]);
     }
+  }
+  addStraggler(id: string, lobby: Lobby) {
+    console.log("ADD STRAGGLER");
+    if (lobby.shipID) {
+      const ship = this.ships[lobby.shipID];
+      if (ship) {
+        const spawn = ship.spawnPoint.pos.copy();
+        this.users.push(id);
+        this.players[id] = new Player(id, spawn.x, spawn.y);
+      }
+    }
+  }
+  removeCrew(lobby: Lobby) {
+    var shipID = lobby.shipID as string;
+    delete this.ships[shipID];
+    Object.keys(lobby.users).forEach(userID => {
+      this.disconnect(userID);
+    });
   }
   update() {
     Object.values(this.gods).forEach(god => god.update());
@@ -72,13 +93,18 @@ export class Game {
             player.applyFriction(ship.forward, ship.physicsObject, ship.bodyPoly);
           }
         }
-        const onLadder = checkHalfPolygonPolygonCollision(player.hitBox, ship.ladder);
-        if (onLadder && (player.movingUp || player.movingDown)) {
-          player.onLadder = true;
-        }
-        if (!onLadder)
-          player.onLadder = false;
       })
+    });
+    Object.values(this.ships).forEach((ship1) => {
+      Object.values(this.ships).forEach(ship2 => {
+        if (ship1.id != ship2.id) {
+          const col = shipShipCollision(ship1, ship2);
+          if (col) {
+            ship1.addDisplacement(col.unitMultiplyReturn(1.2));
+            ship2.addDisplacement(col.unitMultiplyReturn(-1.2));
+          }
+        }
+      });
     });
     //update the displacments of all physics objects
     Object.values(this.players).forEach(player => player.physicsObject.updateDisplace());

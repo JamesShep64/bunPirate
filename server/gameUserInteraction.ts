@@ -108,6 +108,7 @@ export function godAddShip(id: string) {
   const shipID = generateUniqueId({ length: 8 });
   game.ships[shipID] = new PirateShip(shipID, game.gods[id].placePoint.x, game.gods[id].placePoint.y);
   giveGodControl(game.gods[id], game.gods[id].controlledShip, game.ships, game.ships[shipID], "PirateShip");
+  game.ships[shipID].freeze = true;
 
 }
 export function godAddMass(id: string, pos: string, weight: string) {

@@ -7,7 +7,7 @@ export class Block extends Polygon {
   height: number;
   physicsObject: PhysicsObject;
   constructor(id: string, x: number, y: number, width: number, height: number) {
-    super(x, y, [new Vector(-width / 2, -height / 2), new Vector(width / 2, -height / 2), new Vector(width / 2, height / 2), new Vector(-width / 2, height / 2)], true);
+    super(x, y, [new Vector(-width / 2, -height / 2), new Vector(width / 2, -height / 2), new Vector(width / 2, height / 2), new Vector(-width / 2, height / 2)], true, 50);
     this.id = id;
     this.width = width;
     this.height = height;

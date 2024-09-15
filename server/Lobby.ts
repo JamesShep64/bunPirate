@@ -10,6 +10,7 @@ export class Lobby {
   creator: User;
   id: string;
   inGame: boolean;
+  shipID: string | undefined;
   constructor(id: string, creator: User) {
     this.users = {};
     this.users[creator.id] = creator;

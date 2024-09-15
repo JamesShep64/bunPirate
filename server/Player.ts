@@ -12,14 +12,17 @@ export class Player extends Controllable {
   controlled: boolean;
   physicsObject: PhysicsObject;
   jumpTicks: number;
+  jumpCooldown: number;
   onLadder: boolean;
+  shipAboard: PirateShip | undefined;
   constructor(id: string, x: number, y: number) {
     super(x, y);
     this.id = id;
     this.jumpTicks = 0;
+    this.jumpCooldown = 30;
     this.width = Constants.PLAYER_WIDTH;
     this.height = Constants.PLAYER_HEIGHT;
-    this.hitBox = new Polygon(x, y, [new Vector(0, -this.height / 2), new Vector(this.width / 2, 0), new Vector(0, this.height / 2), new Vector(-this.width / 2, 0)], true);
+    this.hitBox = new Polygon(x, y, [new Vector(0, -this.height / 2), new Vector(this.width / 2, 0), new Vector(0, this.height / 2), new Vector(-this.width / 2, 0)], true, 40);
     this.physicsObject = new PhysicsObject();
     this.hitBox.pos = this.pos;
     this.physicsObject.pos = this.pos;
@@ -39,18 +42,31 @@ export class Player extends Controllable {
     if (this.movingDown && this.onLadder) {
       this.physicsObject.addVelocity(this.verticalMove);
     }
-    if (this.movingUp && this.onLadder) {
+    if (this.movingUp && this.onLadder && this.jumpTicks == 0) {
       this.physicsObject.subtractVelocity(this.verticalMove);
     }
+    if (!this.shipAboard)
+      this.applyFriction(new Vector(1, 0));
+    this.updateJumping();
+    if (this.onLadder)
+      this.physicsObject.onFloor = true;
+    this.shipAboard = undefined;
+    this.physicsObject.update();
+  }
+  updateJumping() {
     if (this.jumpTicks) {
       var mult = 2;
       mult -= .1 * (25 - this.jumpTicks);
       this.physicsObject.addVelocity(this.verticalMove.unitMultiplyReturn(-mult));
       this.jumpTicks--;
+      this.jumpCooldown--;
     }
-    if (this.onLadder)
-      this.physicsObject.onFloor = true;
-    this.physicsObject.update();
+    if (this.jumpTicks == 0 && this.jumpCooldown < 30) {
+      this.jumpCooldown--;
+    }
+    if (this.jumpCooldown == 0) {
+      this.jumpCooldown = 30;
+    }
   }
   applyFriction(vec: Vector, po?: PhysicsObject | undefined, polygon?: Polygon) {
     const forward = vec.unitReturn();
@@ -68,7 +84,7 @@ export class Player extends Controllable {
     this.physicsObject.gravityOn = !this.physicsObject.gravityOn;
   }
   jump() {
-    if (this.physicsObject.onFloor || this.onLadder) {
+    if (this.jumpCooldown == 30 && (this.physicsObject.onFloor || this.onLadder)) {
       this.onLadder = false;
       this.jumpTicks = 25;
     }

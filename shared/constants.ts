@@ -30,6 +30,7 @@ export const Constants = {
     JOINED_CREW: 'joined_crew',
     CREATOR_JOINED_GAME: 'creator_joined_game',
     CREATOR_LEFT_GAME: 'creator_left_game',
+    ADD_STRAGGLER: "add to lobby",
     BECOME_LEADER: 'become-leader',
     WS_ID: 'websocket id',
     DISCONNECT: 'dc',

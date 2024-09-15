@@ -2,6 +2,8 @@ import { Vector } from "../shared/Vector";
 import { PirateShip } from "./PirateShip";
 import { Polygon } from "./polygon";
 export function checkHalfPolygonPolygonCollision(poly1: Polygon, poly2: Polygon) {
+  if (!poly2.checkWithinRect(poly1))
+    return false;
   var pointsToCheck = 0;
   if (poly1.isParellelogram)
     pointsToCheck = poly1.points.length / 2;
@@ -39,6 +41,8 @@ function vectorCollision(zero1: Vector, vec1: Vector, zero2: Vector, vec2: Vecto
 //the return is a displacment vector for poly1
 
 export function polygonPolygonCollision(poly1: Polygon, poly2: Polygon) {
+  if (!poly2.checkWithinRect(poly1))
+    return;
   const firstCol = halfPolygonPolygonCollision(poly1, poly2);
   if (firstCol)
     return firstCol;
@@ -123,6 +127,8 @@ function halfPolygonShipCollision(poly1: Polygon, ship: PirateShip) {
   return { onFloor, push: totalPush };
 }
 export function polygonShipCollision(poly: Polygon, ship: PirateShip): { push: Vector, onFloor: boolean } | undefined {
+  if (!ship.bodyPoly.checkWithinRect(poly))
+    return;
   const firstCol = halfPolygonShipCollision(poly, ship);
   if (firstCol)
     return firstCol;
@@ -130,6 +136,15 @@ export function polygonShipCollision(poly: Polygon, ship: PirateShip): { push: V
   if (secondCol) {
     return { push: secondCol, onFloor: false };
   }
+}
+export function shipShipCollision(ship1: PirateShip, ship2: PirateShip) {
+  if (!ship2.bodyPoly.checkWithinRect(ship2.bodyPoly))
+    return;
+  const firstCol = halfPolygonPolygonCollision(ship1.bodyPoly, ship2.collisionZerosPolygon);
+  if (firstCol)
+    return firstCol;
+  const secondCol = halfPolygonPolygonCollision(ship2.bodyPoly, ship1.bodyPoly);
+  return secondCol;
 }
 function shipDiagnolPolygonCollision(ship: PirateShip, poly: Polygon) {
   var diff = 0;

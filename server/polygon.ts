@@ -6,14 +6,16 @@ export class Polygon {
   radius: number;
   direction: number;
   pos: Vector;
+  size: number;
 
   isParellelogram: boolean;
-  constructor(x: number, y: number, points: Vector[], isParellelogram: boolean) {
+  constructor(x: number, y: number, points: Vector[], isParellelogram: boolean, size: number) {
     this.points = points;
     this.radius = 0;
     this.direction = 0;
     this.pos = new Vector(x, y);
     this.isParellelogram = isParellelogram;
+    this.size = size;
   }
 
   //rotates about zero ANGLE IN RADIANS
@@ -39,6 +41,12 @@ export class Polygon {
   rotateTo(angle: number) {
     angle %= 2 * Constants.PI;
     this.rotate(angle - this.direction, undefined, undefined);
+  }
+  checkWithinRect(other: Polygon) {
+    if (this.pos.x > other.pos.x + this.size + other.size || this.pos.x < other.pos.x - this.size - other.size || this.pos.y > other.pos.y + this.size + other.size || this.pos.y < other.pos.y - this.size - other.size)
+      return false;
+
+    return true;
   }
 
 }
