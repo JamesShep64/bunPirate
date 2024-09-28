@@ -1,4 +1,4 @@
-import { blockUpdate, gameUpdate, objectUpdate, shipUpdate } from "../shared/Message";
+import { blockUpdate, gameUpdate, objectUpdate, shipUpdate, vectorUpdate } from "../shared/Message";
 import { toggleInterpolate } from "./inputs";
 
 const RENDER_DELAY = 100;
@@ -53,7 +53,8 @@ export function getCurrentState() {
 			otherGods: interpolateObjectArray(baseUpdate.otherGods, next.otherGods, ratio),
 			otherPlayers: interpolateObjectArray(baseUpdate.otherPlayers, next.otherPlayers, ratio),
 			blocks: interpolateObjectArray(baseUpdate.blocks, next.blocks, ratio),
-			ships: interpolateShips(baseUpdate.ships, next.ships, ratio)
+			ships: interpolateShips(baseUpdate.ships, next.ships, ratio),
+			planets: baseUpdate.planets,
 		}
 	}
 }
@@ -61,6 +62,8 @@ function interpolateShips(base: shipUpdate[], next: shipUpdate[], ratio: number)
 	interpolateObjectArray(base, next, ratio);
 	base.forEach((ship) => {
 		interpolateObjectArray(ship.masses, next.find(next => next.id === ship.id)?.masses, ratio);
+		interpolatePoints(ship.ladder, next.find(next => next.id === ship.id)?.ladder, ratio);
+		interpolateObject(ship.topPortCannon, next.find(next => next.id === ship.id)?.topPortCannon, ratio);
 	});
 	return base;
 }
@@ -74,15 +77,21 @@ function interpolateObject(base: blockUpdate | objectUpdate | undefined, next: b
 	var b = base as blockUpdate;
 	var n = next as blockUpdate;
 	if (b.points) {
-		for (var i = 0; i < b.points.length; i++) {
-			b.points[i].x = (n.points[i].x - b.points[i].x) * ratio + b.points[i].x;
-			b.points[i].y = (n.points[i].y - b.points[i].y) * ratio + b.points[i].y;
-		}
+		interpolatePoints(b.points, n.points, ratio);
 	}
 
 	return base;
 }
-
+function interpolatePoints(base: vectorUpdate[] | undefined, next: vectorUpdate[] | undefined, ratio: number) {
+	if (!base || !next)
+		return;
+	var b = base as vectorUpdate[];
+	var n = next as vectorUpdate[];
+	for (var i = 0; i < b.length; i++) {
+		b[i].x = (n[i].x - b[i].x) * ratio + b[i].x;
+		b[i].y = (n[i].y - b[i].y) * ratio + b[i].y;
+	}
+}
 function interpolateObjectArray(base: objectUpdate[] | undefined, next: objectUpdate[] | undefined, ratio: number) {
 	if (!base || !next)
 		return base;

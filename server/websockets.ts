@@ -5,7 +5,7 @@ import { Constants } from "../shared/constants";
 import { SocketHandling } from "./messaging";
 import { godJoinedGame, handleActions, handleDisconnect, userCreateLobby, lobbyLinks, userJoinLobby, addCrew, addStraggler } from "./users";
 Bun.build({
-  entrypoints: ['../client/index.ts', '../client/page.ts'],
+  entrypoints: ['../client/index.ts'],
   outdir: '../out/',
 });
 //this is to get the path all of the assets to prepare for sending
@@ -22,6 +22,7 @@ const serverInstance = Bun.serve<{ authToken: string; }>({
     if (server.upgrade(req)) {
       return; // do not return a Response
     }
+
     //get create files to be sent over http
     const htmlPath = "../client/index.html";
     const htmlFile = Bun.file(htmlPath);

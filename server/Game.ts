@@ -4,11 +4,11 @@ import { Block } from "./Block";
 import { God } from "./God";
 import { sendUpdate } from "./users";
 import { Player } from "./Player";
-import { checkHalfPolygonPolygonCollision, polygonPolygonCollision, shipShipCollision } from "./collisions";
 import { PirateShip } from "./PirateShip";
-import { polygonShipCollision } from "./collisions";
 import { Constants } from "../shared/constants";
 import { Lobby } from "./Lobby";
+import { Planet } from "./Planet";
+import { CollisionSection } from "./CollisionGrid";
 
 export class Game {
   users: string[];
@@ -16,13 +16,17 @@ export class Game {
   players: { [key: string]: Player };
   blocks: { [key: string]: Block };
   ships: { [key: string]: PirateShip };
+  planets: { [key: string]: Planet };
+  collisionGrid: CollisionSection[][];
   intervalID: Timer;
   constructor() {
     this.gods = {};
     this.blocks = {};
     this.players = {};
     this.ships = {};
+    this.planets = {};
     this.users = [];
+    this.collisionGrid = Array.from({ length: ~~(Constants.MAP_WIDTH / 500) }, () => Array.from({ length: ~~(Constants.MAP_HEIGHT / 500) }, () => new CollisionSection()));
     this.intervalID = setInterval(this.update.bind(this), 1000 / 30);
   }
   disconnect(id: string) {
@@ -35,12 +39,8 @@ export class Game {
       delete this.players[id];
   }
   addCrew(lobby: Lobby) {
-    var width = Math.random() * Constants.MAP_WIDTH / 2;
-    var height = Math.random() * Constants.MAP_HEIGHT / 2;
-    if (Math.random() < .5)
-      width *= -1;
-    if (Math.random() < .5)
-      width *= -1;
+    var width = Math.random() * Constants.MAP_WIDTH;
+    var height = Math.random() * Constants.MAP_HEIGHT;
     const shipID = generateUniqueId({ length: 8 });
     const crew = Object.keys(lobby.users);
     this.ships[shipID] = new PirateShip(shipID, width, height);
@@ -51,7 +51,6 @@ export class Game {
     }
   }
   addStraggler(id: string, lobby: Lobby) {
-    console.log("ADD STRAGGLER");
     if (lobby.shipID) {
       const ship = this.ships[lobby.shipID];
       if (ship) {
@@ -73,42 +72,14 @@ export class Game {
     Object.values(this.ships).forEach(ship => ship.update());
     Object.values(this.blocks).forEach(block => block.update());
     Object.values(this.players).forEach(player => player.update());
-    //player block collision
-    Object.values(this.players).forEach((player) => {
-      Object.values(this.blocks).forEach((block) => {
-        const col = polygonPolygonCollision(player.hitBox, block);
-        if (col) {
-          player.physicsObject.addDisplacement(col);
-        }
-      })
-    });
-    //player ship collision
-    Object.values(this.players).forEach((player) => {
-      Object.values(this.ships).forEach((ship) => {
-        const col = polygonShipCollision(player.hitBox, ship);
-        if (col) {
-          player.physicsObject.addDisplacement(col.push);
-          if (col.onFloor) {
-            ship.players[player.id] = player;
-            player.applyFriction(ship.forward, ship.physicsObject, ship.bodyPoly);
-          }
-        }
-      })
-    });
-    Object.values(this.ships).forEach((ship1) => {
-      Object.values(this.ships).forEach(ship2 => {
-        if (ship1.id != ship2.id) {
-          const col = shipShipCollision(ship1, ship2);
-          if (col) {
-            ship1.addDisplacement(col.unitMultiplyReturn(1.2));
-            ship2.addDisplacement(col.unitMultiplyReturn(-1.2));
-          }
-        }
-      });
-    });
     //update the displacments of all physics objects
+    Object.values(this.ships).forEach(ship => ship.physicsObject.updateDisplace());
     Object.values(this.players).forEach(player => player.physicsObject.updateDisplace());
-    Object.values(this.blocks).forEach(block => block.physicsObject.updateDisplace());
+    for (var i = 1; i < this.collisionGrid.length; i += 2) {
+      for (var j = 1; j < this.collisionGrid[0].length; j += 2) {
+        this.collisionGrid[i][j].CheckCollisions(this.collisionGrid[i - 1][j], this.collisionGrid[i + 1][j], this.collisionGrid[i][j + 1], this.collisionGrid[i][j - 1], this.collisionGrid[i - 1][j - 1], this.collisionGrid[i + 1][j + 1], this.collisionGrid[i - 1][j + 1], this.collisionGrid[i + 1][j - 1]);
+      }
+    }
     //send updates to all users
     this.users.forEach((id: string) => {
       if (id)
@@ -127,7 +98,8 @@ export class Game {
         otherGods: otherGods.map((god) => god.serializeForUpdate()),
         otherPlayers: otherPlayers.map((player) => player.serializeForUpdate()),
         blocks: Object.values(this.blocks).map((block) => block.serializeForUpdate()),
-        ships: Object.values(this.ships).map((ship) => ship.serializeForUpdate())
+        ships: Object.values(this.ships).map((ship) => ship.serializeForUpdate()),
+        planets: Object.values(this.planets).map((planet) => planet.serializeForUpdate())
       });
 
   }

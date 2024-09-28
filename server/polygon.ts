@@ -1,21 +1,27 @@
 import { Constants } from "../shared/constants";
 import { Vector } from "../shared/Vector";
-
+import { game } from "./users";
 export class Polygon {
   points: Vector[];
   radius: number;
   direction: number;
   pos: Vector;
   size: number;
+  collisionList: string[];
+  id: string;
+  collisionIDs: string[];
 
   isParellelogram: boolean;
-  constructor(x: number, y: number, points: Vector[], isParellelogram: boolean, size: number) {
+  constructor(x: number, y: number, points: Vector[], isParellelogram: boolean, size: number, id: string = "") {
     this.points = points;
     this.radius = 0;
     this.direction = 0;
     this.pos = new Vector(x, y);
     this.isParellelogram = isParellelogram;
     this.size = size;
+    this.collisionList = [];
+    this.id = id;
+    this.collisionIDs = [];
   }
 
   //rotates about zero ANGLE IN RADIANS
@@ -47,6 +53,18 @@ export class Polygon {
       return false;
 
     return true;
+  }
+  update() {
+    this.collisionIDs.length = 0;
+  }
+  collisionOccured(other: Polygon) {
+    this.collisionIDs.push(other.id);
+    other.collisionIDs.push(this.id);
+  }
+  checkIfCollision(other : Polygon) {
+    if(this.collisionIDs.indexOf(other.id) != -1)
+      return true;
+    return false;
   }
 
 }

@@ -6,6 +6,7 @@ import { mouseEvent } from "../shared/Message";
 import { Block } from "./Block";
 import { Player } from "./Player";
 import { PirateShip } from "./PirateShip";
+import { Planet } from "./Planet";
 export function addGod(id: string) {
   game.users.push(id);
   game.gods[id] = (new God(id));
@@ -87,6 +88,12 @@ export function stopRight(id: string) {
 export function playerJump(id: string) {
   game.players[id]?.jump();
 }
+export function playerStartHolding(id: string) {
+  game.players[id]?.startInteracting();
+}
+export function playerStopHolding(id: string) {
+  game.players[id]?.stopInteracting();
+}
 export function godAddBlock(id: string) {
   const blockID = generateUniqueId({ length: 8 });
   game.blocks[blockID] = new Block(blockID, game.gods[id].placePoint.x, game.gods[id].placePoint.y, 50, 50);
@@ -95,20 +102,26 @@ export function godAddPlayer(id: string) {
   const playerID = generateUniqueId({ length: 8 });
   game.players[playerID] = new Player(playerID, game.gods[id].placePoint.x, game.gods[id].placePoint.y);
 }
+export function godAddPlanet(id: string) {
+  const planetID = generateUniqueId({ length: 8 });
+  game.planets[planetID] = new Planet(planetID, game.gods[id].placePoint.x, game.gods[id].placePoint.y);
+
+}
 export function godTogglePlayerGravity(id: string) {
   if (game.gods[id].controlledPlayer)
     game.gods[id].controlledPlayer.toggleGravity();
 }
 export function godRotateShip(id: string, angle: number) {
   if (game.gods[id].controlledShip) {
-    game.gods[id].controlledShip.rotate(angle);
+    game.gods[id].controlledShip.rotate(angle * Math.PI);
   }
 }
 export function godAddShip(id: string) {
   const shipID = generateUniqueId({ length: 8 });
-  game.ships[shipID] = new PirateShip(shipID, game.gods[id].placePoint.x, game.gods[id].placePoint.y);
+  var ship = new PirateShip(shipID, game.gods[id].placePoint.x, game.gods[id].placePoint.y);
+  ship.freeze = true;
+  game.ships[shipID] = ship;
   giveGodControl(game.gods[id], game.gods[id].controlledShip, game.ships, game.ships[shipID], "PirateShip");
-  game.ships[shipID].freeze = true;
 
 }
 export function godAddMass(id: string, pos: string, weight: string) {

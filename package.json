@@ -1,4 +1,9 @@
 {
+  "name": "pirate",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "bun --cwd=./server/ run websockets.ts"
+  },
   "dependencies": {
     "bun": "^1.1.26",
     "generate-unique-id": "^2.0.3",

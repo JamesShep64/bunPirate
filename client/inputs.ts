@@ -32,13 +32,13 @@ export function recordActions() {
 			input.focus();  // Focus the text box when Enter is pressed
 			event.stopPropagation();
 		}
-		if (event.key === 'w' || event.key === 'a' || event.key === 's' || event.key === 'd' || event.key === " ") {
+		if (event.key === 'w' || event.key === 'a' || event.key === 's' || event.key === 'd' || event.key === " " || event.key == "j" || event.key == "k" || event.key == "l") {
 			handleKeyDown(event.key);
 		}
 
 	});
 	window.addEventListener('keyup', (event) => {
-		if (event.key === 'w' || event.key === 'a' || event.key === 's' || event.key === 'd')
+		if (event.key === 'w' || event.key === 'a' || event.key === 's' || event.key === 'd' || event.key == "j" || event.key == "k" || event.key == "l")
 			handleKeyUp(event.key);
 	});
 	setInterval(sendActions, 1000 / 30);

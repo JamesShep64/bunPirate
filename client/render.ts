@@ -1,7 +1,7 @@
 import { debounce } from 'throttle-debounce';
 import { getCurrentState } from './state';
 import { Vector } from '../shared/Vector';
-import { blockUpdate, godUpdate, objectUpdate, playerUpdate, shipUpdate } from '../shared/Message';
+import { blockUpdate, cannonUpdate, godUpdate, objectUpdate, playerUpdate, shipUpdate } from '../shared/Message';
 import { Constants } from '../shared/constants';
 import { cursPos } from './inputs';
 
@@ -36,13 +36,13 @@ function drawBackground(camX: number, camY: number) {
 	var canvasY = canvas.height / 2 - camY;
 	var grd = context.createLinearGradient(
 		canvasX,
-		canvasY - Constants.MAP_HEIGHT / 2,
+		canvasY - Constants.MAP_HEIGHT,
 		canvasX,
-		Constants.MAP_HEIGHT / 2 + canvasY + 1000
+		Constants.MAP_HEIGHT + canvasY + 1000
 	);
-	grd.addColorStop(.8, "#34cceb");
-	grd.addColorStop(.35, "#0440cc");
-	grd.addColorStop(.2, "black");
+	grd.addColorStop(.8, "#3483eb");
+	grd.addColorStop(.65, "#0440cc");
+	grd.addColorStop(.45, "black");
 	context.fillStyle = grd;
 	context.fillRect(0, 0, canvas.width, canvas.height);
 	context.save();
@@ -52,12 +52,12 @@ function drawBackground(camX: number, camY: number) {
 			context.save();
 			x = Math.ceil(x / 80) * 80;
 			y = Math.ceil(y / 80) * 80;
-			var shift = -17520;
+			var shift = -16400;
 			var xCheck = x + shift;
 			var yCheck = y + shift;
 			context.translate(x, y);
 			if ((xCheck % 4240 == 0 && yCheck % 2320 == 0) || (xCheck % 3520 == 0 && yCheck % 3120 == 0) || (xCheck % 3200 == 0 && yCheck % 2080 == 0) || (xCheck % 8320 == 0 && yCheck % 4240 == 0) || (xCheck % 2880 == 0 && yCheck % 2820 == 0) || (xCheck % 4400 == 0 && yCheck % 3280 == 0) || (xCheck % 3280 == 0 && yCheck % 2400 == 0) || (xCheck % 2720 == 0 && yCheck % 1280 == 0) || (xCheck % 2240 == 0 && yCheck % 3000 == 0) || (xCheck % 1120 == 0 && yCheck % 4000 == 0) || (xCheck % 1120 == 0 && yCheck % 3040 == 0) || (xCheck % 2160 == 0 && yCheck % 3440 == 0)) {
-				if (((yCheck < shift + Constants.MAP_HEIGHT * .15))) {
+				if (((yCheck < shift + Constants.MAP_HEIGHT * .25))) {
 					context.beginPath();
 					context.fillStyle = "#FFDB51";
 					context.beginPath();
@@ -96,17 +96,18 @@ function drawBackground(camX: number, camY: number) {
 	context.beginPath();
 	context.strokeStyle = "red";
 	context.lineWidth = 5;
-	context.strokeRect(-Constants.MAP_WIDTH / 2, -Constants.MAP_HEIGHT / 2, Constants.MAP_WIDTH, Constants.MAP_HEIGHT);
+	context.strokeRect(0, 0, Constants.MAP_WIDTH, Constants.MAP_HEIGHT);
 	context.restore();
 	context.fillStyle = 'red';
 }
 
 function render() {
-	const { meGod, mePlayer, otherGods, otherPlayers, blocks, ships } = getCurrentState();
+	const { meGod, mePlayer, otherGods, otherPlayers, blocks, ships, planets } = getCurrentState();
 	initializeDrawing(meGod, mePlayer);
 	drawMe(meGod as godUpdate, mePlayer as playerUpdate);
 	drawOtherGods(otherGods as godUpdate[]);
 	drawBlocks(blocks as blockUpdate[]);
+	drawBlocks(planets as blockUpdate[]);
 	drawOtherPlayers(otherPlayers as playerUpdate[]);
 	drawShips(ships as shipUpdate[]);
 	context.restore();
@@ -199,6 +200,12 @@ function drawPolygon(x: number, y: number, points: Vector[]) {
 	context.stroke();
 	context.restore();
 }
+function drawCannon(cannon: cannonUpdate) {
+	context.beginPath();
+	context.arc(cannon.x, cannon.y, 10, 0, 2 * Math.PI);
+	context.fill();
+	drawPolygon(cannon.x, cannon.y, cannon.points);
+}
 function drawShip(ship: shipUpdate) {
 	if (!context)
 		return;
@@ -207,6 +214,7 @@ function drawShip(ship: shipUpdate) {
 	context.beginPath();
 	context.arc(0, 0, 10, 0, 2 * Math.PI);
 	context.fill();
+
 	context.beginPath();
 	for (var i = 0; i < ship.points.length; i++) {
 		if (i == 0) {
@@ -223,6 +231,20 @@ function drawShip(ship: shipUpdate) {
 	context.stroke();
 	context.fillStyle = 'rgb(140, 75, 25)';
 	context.fill();
+	/*
+	context.beginPath();
+	var o = 0;
+	for (var i = 0; i < ship.points.length; i++) {
+		for (var i = 0; i < ship.points.length; i++) {
+			if (ship.missingZeros.indexOf(i) != -1) { o++; continue; }
+			context.moveTo(ship.zeroPoints[i - o].x, ship.zeroPoints[i - o].y);
+			context.lineTo(ship.points[i].x, ship.points[i].y);
+			context.lineTo(ship.points[i].x, ship.points[i].y);
+		}
+	}
+	context.closePath();
+	context.stroke();
+		*/
 	//draw ladder
 	drawPolygon(0, 0, ship.ladder);
 	//draw masses
@@ -239,6 +261,7 @@ function drawShip(ship: shipUpdate) {
 	var farRight = 230;
 	context.beginPath();
 	context.strokeRect(farLeft, farLeft, farRight - farLeft, farRight - farLeft);
+	drawCannon(ship.topPortCannon);
 	context.restore();
 }
 

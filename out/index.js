@@ -9,13 +9,13 @@ var Constants = {
   PI: 3.14,
   VELOCITY_MULTIPLIER: 2.5,
   MAP_SIZE: 3000,
-  MAP_HEIGHT: 5000,
-  MAP_WIDTH: 1e4,
+  MAP_HEIGHT: 4500,
+  MAP_WIDTH: 4500,
   PLAYER_HEIGHT: 40,
   PLAYER_WIDTH: 25,
   BLOCK_HEIGHT: 30,
   BLOCK_WIDTH: 25,
-  MAX_GRAVITY: 4,
+  MAX_GRAVITY: 6,
   GRAVITY_MULT: 0.1,
   MSG_TYPES: {
     INPUT: "user input",
@@ -207,7 +207,8 @@ function getCurrentState() {
       otherGods: interpolateObjectArray(baseUpdate.otherGods, next.otherGods, ratio),
       otherPlayers: interpolateObjectArray(baseUpdate.otherPlayers, next.otherPlayers, ratio),
       blocks: interpolateObjectArray(baseUpdate.blocks, next.blocks, ratio),
-      ships: interpolateShips(baseUpdate.ships, next.ships, ratio)
+      ships: interpolateShips(baseUpdate.ships, next.ships, ratio),
+      planets: baseUpdate.planets
     };
   }
 }
@@ -215,6 +216,8 @@ function interpolateShips(base, next, ratio) {
   interpolateObjectArray(base, next, ratio);
   base.forEach((ship) => {
     interpolateObjectArray(ship.masses, next.find((next2) => next2.id === ship.id)?.masses, ratio);
+    interpolatePoints(ship.ladder, next.find((next2) => next2.id === ship.id)?.ladder, ratio);
+    interpolateObject(ship.topPortCannon, next.find((next2) => next2.id === ship.id)?.topPortCannon, ratio);
   });
   return base;
 }
@@ -228,12 +231,19 @@ function interpolateObject(base, next, ratio) {
   var b = base;
   var n = next;
   if (b.points) {
-    for (var i = 0;i < b.points.length; i++) {
-      b.points[i].x = (n.points[i].x - b.points[i].x) * ratio + b.points[i].x;
-      b.points[i].y = (n.points[i].y - b.points[i].y) * ratio + b.points[i].y;
-    }
+    interpolatePoints(b.points, n.points, ratio);
   }
   return base;
+}
+function interpolatePoints(base, next, ratio) {
+  if (!base || !next)
+    return;
+  var b = base;
+  var n = next;
+  for (var i = 0;i < b.length; i++) {
+    b[i].x = (n[i].x - b[i].x) * ratio + b[i].x;
+    b[i].y = (n[i].y - b[i].y) * ratio + b[i].y;
+  }
 }
 function interpolateObjectArray(base, next, ratio) {
   if (!base || !next)
@@ -264,10 +274,10 @@ function initializeDrawing(meGod, mePlayer) {
 function drawBackground(camX, camY) {
   var canvasX = canvas.width / 2 - camX;
   var canvasY = canvas.height / 2 - camY;
-  var grd = context.createLinearGradient(canvasX, canvasY - Constants.MAP_HEIGHT / 2, canvasX, Constants.MAP_HEIGHT / 2 + canvasY + 1000);
-  grd.addColorStop(0.8, "#34cceb");
-  grd.addColorStop(0.35, "#0440cc");
-  grd.addColorStop(0.2, "black");
+  var grd = context.createLinearGradient(canvasX, canvasY - Constants.MAP_HEIGHT, canvasX, Constants.MAP_HEIGHT + canvasY + 1000);
+  grd.addColorStop(0.8, "#3483eb");
+  grd.addColorStop(0.65, "#0440cc");
+  grd.addColorStop(0.45, "black");
   context.fillStyle = grd;
   context.fillRect(0, 0, canvas.width, canvas.height);
   context.save();
@@ -277,12 +287,12 @@ function drawBackground(camX, camY) {
       context.save();
       x = Math.ceil(x / 80) * 80;
       y = Math.ceil(y / 80) * 80;
-      var shift = -17520;
+      var shift = -16400;
       var xCheck = x + shift;
       var yCheck = y + shift;
       context.translate(x, y);
       if (xCheck % 4240 == 0 && yCheck % 2320 == 0 || xCheck % 3520 == 0 && yCheck % 3120 == 0 || xCheck % 3200 == 0 && yCheck % 2080 == 0 || xCheck % 8320 == 0 && yCheck % 4240 == 0 || xCheck % 2880 == 0 && yCheck % 2820 == 0 || xCheck % 4400 == 0 && yCheck % 3280 == 0 || xCheck % 3280 == 0 && yCheck % 2400 == 0 || xCheck % 2720 == 0 && yCheck % 1280 == 0 || xCheck % 2240 == 0 && yCheck % 3000 == 0 || xCheck % 1120 == 0 && yCheck % 4000 == 0 || xCheck % 1120 == 0 && yCheck % 3040 == 0 || xCheck % 2160 == 0 && yCheck % 3440 == 0) {
-        if (yCheck < shift + Constants.MAP_HEIGHT * 0.15) {
+        if (yCheck < shift + Constants.MAP_HEIGHT * 0.25) {
           context.beginPath();
           context.fillStyle = "#FFDB51";
           context.beginPath();
@@ -321,16 +331,17 @@ function drawBackground(camX, camY) {
   context.beginPath();
   context.strokeStyle = "red";
   context.lineWidth = 5;
-  context.strokeRect(-Constants.MAP_WIDTH / 2, -Constants.MAP_HEIGHT / 2, Constants.MAP_WIDTH, Constants.MAP_HEIGHT);
+  context.strokeRect(0, 0, Constants.MAP_WIDTH, Constants.MAP_HEIGHT);
   context.restore();
   context.fillStyle = "red";
 }
 function render() {
-  const { meGod, mePlayer, otherGods, otherPlayers, blocks, ships } = getCurrentState();
+  const { meGod, mePlayer, otherGods, otherPlayers, blocks, ships, planets } = getCurrentState();
   initializeDrawing(meGod, mePlayer);
   drawMe(meGod, mePlayer);
   drawOtherGods(otherGods);
   drawBlocks(blocks);
+  drawBlocks(planets);
   drawOtherPlayers(otherPlayers);
   drawShips(ships);
   context.restore();
@@ -417,6 +428,12 @@ function drawPolygon(x, y, points) {
   context.stroke();
   context.restore();
 }
+function drawCannon(cannon) {
+  context.beginPath();
+  context.arc(cannon.x, cannon.y, 10, 0, 2 * Math.PI);
+  context.fill();
+  drawPolygon(cannon.x, cannon.y, cannon.points);
+}
 function drawShip(ship) {
   if (!context)
     return;
@@ -453,6 +470,7 @@ function drawShip(ship) {
   var farRight = 230;
   context.beginPath();
   context.strokeRect(farLeft, farLeft, farRight - farLeft, farRight - farLeft);
+  drawCannon(ship.topPortCannon);
   context.restore();
 }
 var cameraPosition = { x: 0, y: 0 };
@@ -474,12 +492,12 @@ function recordActions() {
       input.focus();
       event.stopPropagation();
     }
-    if (event.key === "w" || event.key === "a" || event.key === "s" || event.key === "d" || event.key === " ") {
+    if (event.key === "w" || event.key === "a" || event.key === "s" || event.key === "d" || event.key === " " || event.key == "j" || event.key == "k" || event.key == "l") {
       handleKeyDown(event.key);
     }
   });
   window.addEventListener("keyup", (event) => {
-    if (event.key === "w" || event.key === "a" || event.key === "s" || event.key === "d")
+    if (event.key === "w" || event.key === "a" || event.key === "s" || event.key === "d" || event.key == "j" || event.key == "k" || event.key == "l")
       handleKeyUp(event.key);
   });
   setInterval(sendActions, 1000 / 30);

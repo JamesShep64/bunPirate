@@ -25,7 +25,6 @@ export class PhysicsObject {
     this.onFloor = false;
   }
   update() {
-    this.updateDisplace();
     if (!this.onFloor && this.gravityOn && this.gravityVelocity.y < Constants.MAX_GRAVITY)
       this.gravityVelocity.add(this.gravity.unitMultiplyReturn(Constants.GRAVITY_MULT));
     if (this.gravityOn && !this.onFloor)

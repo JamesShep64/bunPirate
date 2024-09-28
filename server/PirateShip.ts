@@ -6,7 +6,9 @@ import { Mass } from "./Mass";
 import { PhysicsObject } from "./PhysicsObject";
 import { Player } from "./Player";
 import { Polygon } from "./polygon";
-import { checkHalfPolygonPolygonCollision } from "./collisions";
+import { checkHalfPolygonPolygonCollision, putInGrid } from "./collisions";
+import { Queue } from "./Queue";
+import { Cannon } from "./Cannon";
 export class PirateShip {
   pos: Vector;
   displace: Vector;
@@ -30,27 +32,35 @@ export class PirateShip {
   netVelocity: Vector;
   ladder: Polygon;
   spawnPoint: Polygon;
+  shipsCollided: string[];
+  rollingAverage: Queue;
+  rollingVelocityMult: number;
+  topPortCannon: Cannon;
   constructor(id: string, x: number, y: number) {
     this.id = id;
     this.pos = new Vector(x, y);
     this.controlled = false;
     this.freeze = false;
+    this.shipsCollided = [];
     this.displace = new Vector(0, 0);
     this.friction = new Vector(0, 0);
     this.forward = new Vector(1, 0);
     this.turn = 1;
     this.players = {};
     this.blocks = {};
+    this.rollingAverage = new Queue(5, 20);
+    this.rollingVelocityMult = 1;
     this.masses = [];
     this.torque = 0;
     this.physicsObject = new PhysicsObject();
     this.physicsObject.gravityOn = false;
-    this.bodyPoly = new Polygon(x, y, [new Vector(-220, -30), new Vector(-35, -30), new Vector(-35, 0), new Vector(-125, 0), new Vector(-125, 65), new Vector(125, 65), new Vector(125, 0), new Vector(35, 0), new Vector(35, -30), new Vector(220, -30), new Vector(220, 0), new Vector(140, 100), new Vector(-140, 100), new Vector(-220, 0)], false, 220);
+    this.bodyPoly = new Polygon(x, y, [new Vector(-220, -30), new Vector(-35, -30), new Vector(-35, 0), new Vector(-125, 0), new Vector(-125, 65), new Vector(125, 65), new Vector(125, 0), new Vector(35, 0), new Vector(35, -30), new Vector(220, -30), new Vector(220, 0), new Vector(140, 100), new Vector(-140, 100), new Vector(-220, 0)], false, 220, id);
     this.collisionZerosPolygon = new Polygon(0, 0, [new Vector(-210, -20), new Vector(-45, -20), new Vector(-45, -10), new Vector(45, -10), new Vector(45, -20), new Vector(210, -20), new Vector(210, -10), new Vector(130, 90), new Vector(-130, 90), new Vector(-210, -10)], false, 220);
     this.ladder = new Polygon(0, 0, [new Vector(-10, -30), new Vector(10, -30), new Vector(10, 50), new Vector(-10, 50)], true, 90);
     this.spawnPoint = new Polygon(0, 0, [new Vector(100, -50)], false, 0);
     this.farLeft = -230;
     this.farRight = 230;
+    this.topPortCannon = new Cannon(-180, -40, this.pos);
     this.collisionZerosPolygon.pos = this.pos;
     this.ladder.pos = this.pos;
     this.bodyPoly.pos = this.pos;
@@ -61,29 +71,43 @@ export class PirateShip {
     this.netVelocity = this.physicsObject.netVelocity;
   }
   update() {
+    if (this.rollingAverage.ticks == 0) {
+      this.rollingAverage.add(this.bodyPoly.direction);
+      if (this.rollingAverage.items.length == this.rollingAverage.maxLength) {
+        this.rollingAverage.average();
+        this.rollingVelocityMult = 1 - 25 * Math.abs(this.bodyPoly.direction - this.rollingAverage.averageItem);
+      }
+    }
+    this.shipsCollided.length = 0;
     this.getTorque();
     this.applyTorque();
     this.forward.set(this.bodyPoly.points[1].x - this.bodyPoly.points[0].x, this.bodyPoly.points[1].y - this.bodyPoly.points[0].y);
     if (!this.freeze)
-      this.physicsObject.addVelocity(this.forward.unitMultiplyReturn(this.turn * .007));
+      this.physicsObject.addVelocity(this.forward.unitMultiplyReturn(this.turn * .007 * this.rollingVelocityMult));
+    this.bodyPoly.update();
     this.physicsObject.update();
     this.checkPlayersWithin();
-    //cehck border collsision
-    if (this.pos.x > Constants.MAP_WIDTH / 2 || this.pos.x < -Constants.MAP_WIDTH / 2)
+    //check border collsision
+    if (this.pos.x > Constants.MAP_WIDTH || this.pos.x < 0)
       this.turn *= -1;
-    if (this.pos.y > Constants.MAP_HEIGHT / 2) {
+    if (this.pos.y > Constants.MAP_HEIGHT) {
       this.rotate(Math.PI / 2);
     }
-    if (this.pos.y < -Constants.MAP_HEIGHT / 2) {
+    if (this.pos.y < -Constants.MAP_HEIGHT) {
       this.rotate(-Math.PI / 2);
     }
     this.playerLadderCollisions();
+    this.playerCannonCollisions();
+    this.topPortCannon.update();
+    this.rollingAverage.update();
+    putInGrid(this.pos, this);
   }
   getTorque() {
     //player torque
     this.torque = 0;
     Object.values(this.players).forEach(player => {
-      this.torque += (player.pos.x - this.pos.x) / 600;
+      if (player.physicsObject.onFloor)
+        this.torque += (player.pos.x - this.pos.x) / 600;
     });
     this.masses.forEach(mass => {
       if (mass) {
@@ -98,6 +122,7 @@ export class PirateShip {
     const { cos, sin } = this.bodyPoly.rotate(angle);
     this.collisionZerosPolygon.rotate(angle, cos, sin);
     this.ladder.rotate(angle, cos, sin);
+    this.topPortCannon.doRotate(angle, cos, sin);
     this.spawnPoint.rotate(angle, cos, sin);
     this.masses.forEach(mass => { if (mass) mass.poly.rotate(angle) });
     if (withPolys) {
@@ -114,13 +139,20 @@ export class PirateShip {
   playerLadderCollisions() {
     Object.values(this.players).forEach(player => {
       const onLadder = checkHalfPolygonPolygonCollision(player.hitBox, this.ladder);
+      if (onLadder && player.onLadder) {
+        player.applyFriction(this.forward, this.physicsObject, this.bodyPoly);
+      }
       if (onLadder && (player.movingUp || player.movingDown)) {
         player.onLadder = true;
       }
       if (!onLadder)
         player.onLadder = false;
     });
-
+  }
+  playerCannonCollisions() {
+    Object.values(this.players).forEach(player => {
+      this.topPortCannon.checkPlayerWithinRect(player);
+    });
   }
   addDisplacement(vec: Vector) {
     Object.values(this.players).forEach(player => {
@@ -144,14 +176,9 @@ export class PirateShip {
   clearMass() {
     this.masses = [];
   }
-  withinRect(pos: Vector) {
-    if (pos.x < this.pos.x + this.farLeft || pos.x > this.pos.x + this.farRight || pos.y < this.pos.y + this.farLeft || pos.y > this.pos.y + this.farRight)
-      return false;
-    return true;
-  }
   checkPlayersWithin() {
     Object.values(this.players).forEach((player) => {
-      if (!this.withinRect(player.pos)) {
+      if (!this.bodyPoly.checkWithinRect(player.hitBox)) {
         delete this.players[player.id];
       }
       else
@@ -168,6 +195,7 @@ export class PirateShip {
       missingZeros: this.missingZeros,
       masses: this.masses.map(mass => mass.serializeForUpdates()),
       ladder: this.ladder.points.map(point => point.serializeForUpdates()),
+      topPortCannon: this.topPortCannon.serializeForUpdate(),
     } as shipUpdate;
   }
 

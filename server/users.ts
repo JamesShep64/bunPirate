@@ -2,7 +2,7 @@ import { Constants } from "../shared/constants";
 import { Action, gameUpdate, godCommand, keyEvent, Message } from "../shared/Message";
 import { Game } from "./Game";
 import { sendMessage } from "./websockets";
-import { addGod, moveLeft, moveDown, moveUp, playerJump, godTogglePlayerGravity, moveRight, godClearMass, godAddMass, godFollowShip, handleMouseMove, handleMouseClick, stopRight, stopUp, stopDown, stopLeft, godAddShip, godAddBlock, godAddPlayer, changeTicks, godRotateShip, godFreezeShip } from "./gameUserInteraction";
+import { addGod, moveLeft, moveDown, moveUp, playerJump, godTogglePlayerGravity, moveRight, godClearMass, godAddMass, godFollowShip, handleMouseMove, handleMouseClick, stopRight, stopUp, stopDown, stopLeft, godAddShip, godAddBlock, godAddPlayer, changeTicks, godRotateShip, godFreezeShip, godAddPlanet, playerStartHolding, playerStopHolding } from "./gameUserInteraction";
 import generateUniqueId from "generate-unique-id";
 import { Lobby } from "./Lobby";
 import { User } from "./User";
@@ -96,6 +96,8 @@ function handleKeyDown(action: Action) {
 		case " ":
 			playerJump(action.id);
 			break;
+		case "k":
+			playerStartHolding(action.id);
 	}
 }
 function handleKeyUp(action: Action) {
@@ -113,6 +115,8 @@ function handleKeyUp(action: Action) {
 		case "d":
 			stopRight(action.id);
 			break;
+		case "k":
+			playerStopHolding(action.id);
 	}
 }
 function handleCommands(action: Action) {
@@ -124,6 +128,9 @@ function handleCommands(action: Action) {
 			break;
 		case "player":
 			godAddPlayer(action.id);
+			break;
+		case "plan":
+			godAddPlanet(action.id);
 			break;
 		case "grav":
 			godTogglePlayerGravity(action.id);

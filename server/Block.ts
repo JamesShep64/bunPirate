@@ -1,6 +1,7 @@
 import { Polygon } from "./polygon";
 import { Vector } from "../shared/Vector"
 import { PhysicsObject } from "./PhysicsObject";
+import { putInGrid } from "./collisions";
 export class Block extends Polygon {
   id: string;
   width: number;
@@ -15,14 +16,16 @@ export class Block extends Polygon {
     this.physicsObject.pos = this.pos;
   }
   update() {
+    super.update();
     this.physicsObject.update();
+    putInGrid(this.pos, this);
   }
   serializeForUpdate() {
     return {
       id: this.id,
       x: this.pos.x,
       y: this.pos.y,
-      points: this.points,
+      points: this.points.map(point => point.serializeForUpdates()),
     }
   }
 }
