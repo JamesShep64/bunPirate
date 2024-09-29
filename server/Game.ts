@@ -11,6 +11,7 @@ import { Planet } from "./Planet";
 import { CollisionSection } from "./CollisionGrid";
 import { CannonBall } from "./CannonBall";
 import { Explosion } from "./Explosion";
+import { Grapple } from "./Grapple";
 
 export class Game {
   users: string[];
@@ -20,6 +21,7 @@ export class Game {
   ships: { [key: string]: PirateShip };
   planets: { [key: string]: Planet };
   cannonBalls: { [key: string]: CannonBall };
+  grapples: { [key: string]: Grapple };
   explosions: { [key: string]: Explosion };
   collisionGrid: CollisionSection[][];
   intervalID: Timer;
@@ -32,6 +34,7 @@ export class Game {
     this.planets = {};
     this.cannonBalls = {};
     this.explosions = {};
+    this.grapples = {};
     this.users = [];
     this.collisionGrid = Array.from({ length: ~~(Constants.MAP_WIDTH / 500) }, () => Array.from({ length: ~~(Constants.MAP_HEIGHT / 500) }, () => new CollisionSection()));
     this.intervalID = setInterval(this.update.bind(this), 1000 / 30);
@@ -84,6 +87,13 @@ export class Game {
     }
     delete this.cannonBalls[cannonBall.id];
   }
+  addGrapple(grapple: Grapple) {
+    this.grapples[grapple.id] = grapple;
+  }
+  deleteGrapple(grapple: Grapple) {
+    grapple.ship.grapple = undefined;
+    delete this.grapples[grapple.id];
+  }
   addExplosion(explosion: Explosion) {
     this.explosions[explosion.id] = explosion;
   }
@@ -98,6 +108,7 @@ export class Game {
     Object.values(this.planets).forEach(planet => planet.update());
     Object.values(this.players).forEach(player => player.update());
     Object.values(this.cannonBalls).forEach(ball => ball.update());
+    Object.values(this.grapples).forEach(ball => ball.update());
     Object.values(this.explosions).forEach(explo => explo.update());
     for (var i = 1; i < this.collisionGrid.length; i += 2) {
       for (var j = 1; j < this.collisionGrid[0].length; j += 2) {
@@ -132,6 +143,7 @@ export class Game {
         ships: Object.values(this.ships).map((ship) => ship.serializeForUpdate()),
         planets: Object.values(this.planets).map((planet) => planet.serializeForUpdate()),
         cannonBalls: Object.values(this.cannonBalls).map((ball => ball.serializeForUpdate())),
+        grapples: Object.values(this.grapples).map((ball => ball.serializeForUpdate())),
         explosions: Object.values(this.explosions).map((explo => explo.serializeForUpdate())),
       });
 

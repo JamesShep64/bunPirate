@@ -210,7 +210,8 @@ function getCurrentState() {
       ships: interpolateShips(baseUpdate.ships, next.ships, ratio),
       planets: baseUpdate.planets,
       cannonBalls: interpolateObjectArray(baseUpdate.cannonBalls, next.cannonBalls, ratio),
-      explosions: interpolateObjectArray(baseUpdate.explosions, next.explosions, ratio)
+      explosions: interpolateObjectArray(baseUpdate.explosions, next.explosions, ratio),
+      grapples: interpolateGrapples(baseUpdate.grapples, next.grapples, ratio)
     };
   }
 }
@@ -252,7 +253,16 @@ function interpolateObjectArray(base, next, ratio) {
     return base;
   return base.map((base2) => interpolateObject(base2, next.find((next2) => base2.id === next2.id), ratio));
 }
-var RENDER_DELAY = 100;
+function interpolateGrapples(base, next, ratio) {
+  interpolateObjectArray(base, next, ratio);
+  if (base && next) {
+    base.forEach((grapple) => {
+      interpolateObject(grapple.launchOrigin, next.find((next2) => next2.id === grapple.id)?.launchOrigin, ratio);
+    });
+  }
+  return base;
+}
+var RENDER_DELAY = 50;
 var gameUpdates = [];
 var gameStart = 0;
 var firstServerTimestamp = 0;
@@ -335,7 +345,7 @@ function drawBackground(camX, camY) {
   context.fillStyle = "red";
 }
 function render() {
-  const { meGod, mePlayer, otherGods, otherPlayers, blocks, ships, planets, cannonBalls, explosions } = getCurrentState();
+  const { meGod, mePlayer, otherGods, otherPlayers, blocks, ships, planets, cannonBalls, explosions, grapples } = getCurrentState();
   initializeDrawing(meGod, mePlayer);
   drawMe(meGod, mePlayer);
   drawOtherGods(otherGods);
@@ -345,6 +355,7 @@ function render() {
   drawShips(ships);
   drawCannonBalls(cannonBalls);
   drawExplosions(explosions);
+  drawGrapples(grapples);
   context.restore();
 }
 function drawCannonBalls(cannonBalls) {
@@ -352,7 +363,6 @@ function drawCannonBalls(cannonBalls) {
     return;
   cannonBalls.forEach((cannonBall) => {
     if (cannonBall) {
-      console.log("B");
       context.save();
       context.translate(cannonBall.x, cannonBall.y);
       context.fillStyle = "black";
@@ -360,6 +370,22 @@ function drawCannonBalls(cannonBalls) {
       context.arc(0, 0, 10, 0, 2 * Math.PI);
       context.closePath();
       context.fill();
+      context.restore();
+    }
+  });
+}
+function drawGrapples(grapples) {
+  if (!grapples)
+    return;
+  grapples.forEach((grapple) => {
+    if (grapple) {
+      console.log("B");
+      context.save();
+      context.beginPath();
+      context.moveTo(grapple.x, grapple.y);
+      context.lineTo(grapple.launchOrigin.x, grapple.launchOrigin.y);
+      context.closePath();
+      context.stroke();
       context.restore();
     }
   });
@@ -393,6 +419,10 @@ function drawMe(meGod, mePlayer) {
     cameraPosition.x = -me.x + canvas.width / 2;
     cameraPosition.y = -me.y + canvas.height / 2;
     drawPolygon(me.x, me.y, me.points);
+    context.save();
+    context.fillStyle = "rgb(" + me.colorR + "," + me.colorG + "," + me.colorB + ")";
+    context.fill();
+    context.restore();
   }
 }
 function drawOtherGods(otherGods) {
@@ -420,6 +450,10 @@ function drawOtherPlayers(otherPlayers) {
     if (!player)
       return;
     drawPolygon(player.x, player.y, player.points);
+    context.save();
+    context.fillStyle = "rgb(" + player.colorR + "," + player.colorG + "," + player.colorB + ")";
+    context.fill();
+    context.restore();
   });
 }
 function drawShips(ships) {
@@ -463,13 +497,13 @@ function drawPolygon(x, y, points) {
   context.restore();
 }
 function drawCannon(cannon) {
-  context.beginPath();
-  context.arc(cannon.x, cannon.y, 10, 0, 2 * Math.PI);
-  context.fill();
   drawPolygon(cannon.x, cannon.y, cannon.points);
   context.fillStyle = "rgb(" + cannon.power + ",0,0)";
   context.fill();
   context.fillStyle = "red";
+  context.beginPath();
+  context.arc(cannon.x, cannon.y, 10, 0, 2 * Math.PI);
+  context.fill();
 }
 function drawShip(ship) {
   if (!context)

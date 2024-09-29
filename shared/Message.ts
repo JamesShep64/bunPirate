@@ -59,6 +59,7 @@ export interface gameUpdate {
 	planets: planetUpdate[];
 	cannonBalls: objectUpdate[];
 	explosions: objectUpdate[];
+	grapples: grappleUpdate[];
 }
 
 export interface lobbyUpdate {
@@ -95,11 +96,17 @@ export interface cannonUpdate {
 	points: vectorUpdate[];
 	power: number;
 }
+export interface grappleUpdate extends objectUpdate {
+	launchOrigin: vectorUpdate;
+}
 export interface godUpdate extends objectUpdate {
 	placeY: number;
 }
 export interface playerUpdate extends objectUpdate {
 	points: vectorUpdate[];
+	colorR: number;
+	colorG: number;
+	colorB: number;
 }
 export interface godCommand {
 	text: string;

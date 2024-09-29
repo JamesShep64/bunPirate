@@ -7,12 +7,14 @@ import { polygonPlanetCollision, polygonPolygonCollision, shipShipCollision, pol
 import { CannonBall } from "./CannonBall";
 import { game } from "./users";
 import { Explosion } from "./Explosion";
+import { Grapple } from "./Grapple";
 export class CollisionSection {
   players: { [key: string]: Player };
   blocks: { [key: string]: Block };
   ships: { [key: string]: PirateShip };
   planets: { [key: string]: Planet };
   cannonBalls: { [key: string]: CannonBall };
+  grapples: { [key: string]: Grapple };
   explosions: { [key: string]: Explosion };
   constructor() {
     this.players = {};
@@ -20,6 +22,7 @@ export class CollisionSection {
     this.ships = {};
     this.planets = {};
     this.cannonBalls = {};
+    this.grapples = {};
     this.explosions = {};
   }
   clear() {
@@ -28,6 +31,7 @@ export class CollisionSection {
     this.ships = {};
     this.planets = {};
     this.cannonBalls = {};
+    this.grapples = {};
     this.explosions = {};
   }
   CheckCollisions(left: CollisionSection, right: CollisionSection, up: CollisionSection, down: CollisionSection, upLeft: CollisionSection, upRight: CollisionSection, downLeft: CollisionSection, downRight: CollisionSection) {
@@ -86,6 +90,17 @@ export class CollisionSection {
       ...upRight.cannonBalls,
       ...downLeft.cannonBalls,
       ...downRight.cannonBalls,
+    }
+    const grapples = {
+      ...this.grapples,
+      ...left.grapples,
+      ...right.grapples,
+      ...up.grapples,
+      ...down.grapples,
+      ...upLeft.grapples,
+      ...upRight.grapples,
+      ...downLeft.grapples,
+      ...downRight.grapples,
     }
     const explosions = {
       ...this.explosions,
@@ -177,6 +192,24 @@ export class CollisionSection {
         if (col) {
           game.deleteCannonBall(ball);
           delete cannonBalls[ball.id];
+        }
+      });
+    });
+    //grapple Ship Collision
+    Object.values(grapples).forEach(ball => {
+      Object.values(ships).forEach(ship => {
+        const col = checkHalfPolygonPolygonCollision(ball, ship.bodyPoly);
+        if (col) {
+          game.deleteGrapple(ball);
+        }
+      });
+    });
+    //grapple Planet Collision
+    Object.values(grapples).forEach(ball => {
+      Object.values(planets).forEach(planet => {
+        const col = checkHalfPolygonPolygonCollision(ball, planet);
+        if (col) {
+          ball.pos = planet.pos;
         }
       });
     });

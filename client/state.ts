@@ -1,8 +1,7 @@
-import { blockUpdate, gameUpdate, objectUpdate, shipUpdate, vectorUpdate } from "../shared/Message";
+import { blockUpdate, gameUpdate, grappleUpdate, objectUpdate, shipUpdate, vectorUpdate } from "../shared/Message";
 import { toggleInterpolate } from "./inputs";
 
-const RENDER_DELAY = 100;
-
+const RENDER_DELAY = 50;
 const gameUpdates: gameUpdate[] = [];
 let gameStart = 0;
 let firstServerTimestamp = 0;
@@ -57,6 +56,7 @@ export function getCurrentState() {
 			planets: baseUpdate.planets,
 			cannonBalls: interpolateObjectArray(baseUpdate.cannonBalls, next.cannonBalls, ratio),
 			explosions: interpolateObjectArray(baseUpdate.explosions, next.explosions, ratio),
+			grapples: interpolateGrapples(baseUpdate.grapples, next.grapples, ratio),
 
 		}
 	}
@@ -82,7 +82,6 @@ function interpolateObject(base: blockUpdate | objectUpdate | undefined, next: b
 	if (b.points) {
 		interpolatePoints(b.points, n.points, ratio);
 	}
-
 	return base;
 }
 function interpolatePoints(base: vectorUpdate[] | undefined, next: vectorUpdate[] | undefined, ratio: number) {
@@ -99,4 +98,13 @@ function interpolateObjectArray(base: objectUpdate[] | undefined, next: objectUp
 	if (!base || !next)
 		return base;
 	return base.map(base => interpolateObject(base, next.find(next => base.id === next.id), ratio));
+}
+function interpolateGrapples(base: grappleUpdate[] | undefined, next: grappleUpdate[] | undefined, ratio: number) {
+	interpolateObjectArray(base, next, ratio);
+	if (base && next) {
+		base.forEach((grapple) => {
+			interpolateObject(grapple.launchOrigin, next.find(next => next.id === grapple.id)?.launchOrigin, ratio);
+		});
+	}
+	return base;
 }

@@ -4,6 +4,8 @@ import { Player } from "./Player";
 import { Polygon } from "./polygon";
 import { game } from "./users";
 import { CannonBall } from "./CannonBall";
+import { Grapple } from "./Grapple";
+import { PirateShip } from "./PirateShip";
 
 export class Cannon extends Polygon {
   id: string;
@@ -13,7 +15,8 @@ export class Cannon extends Polygon {
   player: Player | undefined;
   power: number;
   spaceWasDown: boolean = false;
-  constructor(x: number, y: number, pos: Vector) {
+  ship: PirateShip;
+  constructor(x: number, y: number, pos: Vector, ship: PirateShip) {
     super(0, 0, [new Vector(x, y)], false, 20);
     this.barrel = new Polygon(0, 0, [new Vector(45, -10), new Vector(45, 10), new Vector(0, 10), new Vector(0, -10)], false, 45);
     this.launchVector = new Polygon(0, 0, [new Vector(1, 0)], false, 0);
@@ -23,6 +26,7 @@ export class Cannon extends Polygon {
     this.controlled = false;
     this.player = undefined;
     this.power = 0;
+    this.ship = ship;
   }
   update() {
     if (this.player) {
@@ -41,7 +45,7 @@ export class Cannon extends Polygon {
       if (!this.player.spaceDown && this.spaceWasDown) {
 
         if (this.power > 15)
-          this.fire();
+          this.fireGrapple();
         this.power = 0;
       }
       this.player = undefined;
@@ -58,6 +62,18 @@ export class Cannon extends Polygon {
     spawnPoint.add(this.points[0]);
     const ball = new CannonBall(id, spawnPoint.x, spawnPoint.y, this.launchVector.points[0].unitMultiplyReturn(this.power / 10));
     game.addCannonBall(ball);
+  }
+  fireGrapple() {
+    if (!this.ship.grapple) {
+      const id = generateUniqueId({ length: 8 });
+      const spawnPoint = this.launchVector.points[0].unitMultiplyReturn(45);
+      spawnPoint.add(this.pos);
+      spawnPoint.add(this.points[0]);
+      const ball = new Grapple(id, spawnPoint.x, spawnPoint.y, this.launchVector.points[0].unitMultiplyReturn(this.power / 10), this.pos, this.points[0], this.ship);
+      this.ship.grapple = ball;
+      game.addGrapple(ball);
+    }
+
   }
   //same but without other size
   checkPlayerWithinRect(other: Player) {

@@ -10,6 +10,9 @@ export class Player extends Controllable {
   hitBox: Polygon;
   width: number;
   height: number;
+  colorR: number;
+  colorG: number;
+  colorB: number;
   id: string;
   controlled: boolean;
   physicsObject: PhysicsObject;
@@ -23,6 +26,9 @@ export class Player extends Controllable {
 
   constructor(id: string, x: number, y: number) {
     super(x, y);
+    this.colorR = Math.floor(Math.random() * 255);
+    this.colorG = Math.floor(Math.random() * 255);
+    this.colorB = Math.floor(Math.random() * 150);
     this.id = id;
     this.jumpTicks = 0;
     this.width = Constants.PLAYER_WIDTH;
@@ -132,6 +138,9 @@ export class Player extends Controllable {
 
   serializeForUpdate() {
     return {
+      colorR: this.colorR,
+      colorG: this.colorG,
+      colorB: this.colorB,
       id: this.id,
       x: this.pos.x,
       y: this.pos.y,

@@ -1,10 +1,8 @@
 import { debounce } from 'throttle-debounce';
 import { getCurrentState } from './state';
 import { Vector } from '../shared/Vector';
-import { blockUpdate, cannonUpdate, godUpdate, objectUpdate, playerUpdate, shipUpdate } from '../shared/Message';
+import { blockUpdate, cannonUpdate, godUpdate, grappleUpdate, objectUpdate, playerUpdate, shipUpdate } from '../shared/Message';
 import { Constants } from '../shared/constants';
-import { cursPos } from './inputs';
-import { CannonBall } from '../server/CannonBall';
 
 export const cameraPosition = { x: 0, y: 0 };
 // Get the canvas graphics context
@@ -118,7 +116,7 @@ function drawBackground(camX: number, camY: number) {
 }
 
 function render() {
-	const { meGod, mePlayer, otherGods, otherPlayers, blocks, ships, planets, cannonBalls, explosions } = getCurrentState();
+	const { meGod, mePlayer, otherGods, otherPlayers, blocks, ships, planets, cannonBalls, explosions, grapples } = getCurrentState();
 	initializeDrawing(meGod, mePlayer);
 	drawMe(meGod as godUpdate, mePlayer as playerUpdate);
 	drawOtherGods(otherGods as godUpdate[]);
@@ -128,6 +126,7 @@ function render() {
 	drawShips(ships as shipUpdate[]);
 	drawCannonBalls(cannonBalls as objectUpdate[]);
 	drawExplosions(explosions as objectUpdate[]);
+	drawGrapples(grapples as grappleUpdate[]);
 	context.restore();
 }
 function drawCannonBalls(cannonBalls: objectUpdate[]) {
@@ -135,7 +134,6 @@ function drawCannonBalls(cannonBalls: objectUpdate[]) {
 		return;
 	cannonBalls.forEach(cannonBall => {
 		if (cannonBall) {
-			console.log("B");
 			context.save();
 			context.translate(cannonBall.x, cannonBall.y);
 			context.fillStyle = "black";
@@ -146,6 +144,23 @@ function drawCannonBalls(cannonBalls: objectUpdate[]) {
 			context.restore();
 		}
 	});
+}
+function drawGrapples(grapples: grappleUpdate[]) {
+	if (!grapples)
+		return;
+	grapples.forEach(grapple => {
+		if (grapple) {
+			console.log("B");
+			context.save();
+			context.beginPath();
+			context.moveTo(grapple.x, grapple.y);
+			context.lineTo(grapple.launchOrigin.x, grapple.launchOrigin.y);
+			context.closePath();
+			context.stroke();
+			context.restore();
+		}
+	});
+
 }
 function drawExplosions(explosions: objectUpdate[]) {
 	if (!explosions)
@@ -164,7 +179,6 @@ function drawExplosions(explosions: objectUpdate[]) {
 	});
 }
 function drawMe(meGod: godUpdate | undefined, mePlayer: playerUpdate | undefined) {
-
 	//draw me if me is god
 	if (meGod && !mePlayer) {
 		context.translate(-meGod.x + canvas.width / 2, -meGod.y + canvas.height / 2);
@@ -179,6 +193,10 @@ function drawMe(meGod: godUpdate | undefined, mePlayer: playerUpdate | undefined
 		cameraPosition.x = -me.x + canvas.width / 2;
 		cameraPosition.y = -me.y + canvas.height / 2;
 		drawPolygon(me.x, me.y, me.points);
+		context.save();
+		context.fillStyle = "rgb(" + me.colorR + "," + me.colorG + "," + me.colorB + ")";
+		context.fill();
+		context.restore();
 	}
 }
 function drawOtherGods(otherGods: godUpdate[]) {
@@ -208,6 +226,10 @@ function drawOtherPlayers(otherPlayers: playerUpdate[]) {
 		if (!player)
 			return;
 		drawPolygon(player.x, player.y, player.points);
+		context.save();
+		context.fillStyle = "rgb(" + player.colorR + "," + player.colorG + "," + player.colorB + ")";
+		context.fill();
+		context.restore();
 	});
 }
 function drawShips(ships: shipUpdate[]) {
@@ -252,13 +274,14 @@ function drawPolygon(x: number, y: number, points: Vector[]) {
 	context.restore();
 }
 function drawCannon(cannon: cannonUpdate) {
-	context.beginPath();
-	context.arc(cannon.x, cannon.y, 10, 0, 2 * Math.PI);
-	context.fill();
 	drawPolygon(cannon.x, cannon.y, cannon.points);
 	context.fillStyle = "rgb(" + cannon.power + ",0,0)";
 	context.fill();
 	context.fillStyle = "red";
+	context.beginPath();
+	context.arc(cannon.x, cannon.y, 10, 0, 2 * Math.PI);
+	context.fill();
+
 }
 function drawShip(ship: shipUpdate) {
 	if (!context)

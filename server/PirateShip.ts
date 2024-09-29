@@ -9,6 +9,7 @@ import { Polygon } from "./polygon";
 import { checkHalfPolygonPolygonCollision, putInGrid } from "./collisions";
 import { Queue } from "./Queue";
 import { Cannon } from "./Cannon";
+import { Grapple } from "./Grapple";
 export class PirateShip {
   pos: Vector;
   displace: Vector;
@@ -36,6 +37,7 @@ export class PirateShip {
   rollingAverage: Queue;
   rollingVelocityMult: number;
   topPortCannon: Cannon;
+  grapple: Grapple | undefined;
   constructor(id: string, x: number, y: number) {
     this.id = id;
     this.pos = new Vector(x, y);
@@ -60,7 +62,7 @@ export class PirateShip {
     this.spawnPoint = new Polygon(0, 0, [new Vector(100, -50)], false, 0);
     this.farLeft = -230;
     this.farRight = 230;
-    this.topPortCannon = new Cannon(-180, -40, this.pos);
+    this.topPortCannon = new Cannon(-180, -40, this.pos, this);
     this.collisionZerosPolygon.pos = this.pos;
     this.ladder.pos = this.pos;
     this.bodyPoly.pos = this.pos;

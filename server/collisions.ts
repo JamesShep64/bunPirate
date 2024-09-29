@@ -3,6 +3,7 @@ import { Vector } from "../shared/Vector";
 import { Block } from "./Block";
 import { CannonBall } from "./CannonBall";
 import { Explosion } from "./Explosion";
+import { Grapple } from "./Grapple";
 import { PirateShip } from "./PirateShip";
 import { Planet } from "./Planet";
 import { Player } from "./Player";
@@ -31,6 +32,9 @@ export function putInGrid(pos: Vector, obj: any) {
       break;
     case obj instanceof Block:
       game.collisionGrid[~~((x) / 500)][~~(y / 500)].blocks[obj.id] = obj;
+      break;
+    case obj instanceof Grapple:
+      game.collisionGrid[~~((x) / 500)][~~(y / 500)].grapples[obj.id] = obj;
       break;
     case obj instanceof CannonBall:
       game.collisionGrid[~~((x) / 500)][~~(y / 500)].cannonBalls[obj.id] = obj;
