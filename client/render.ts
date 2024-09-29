@@ -4,6 +4,7 @@ import { Vector } from '../shared/Vector';
 import { blockUpdate, cannonUpdate, godUpdate, objectUpdate, playerUpdate, shipUpdate } from '../shared/Message';
 import { Constants } from '../shared/constants';
 import { cursPos } from './inputs';
+import { CannonBall } from '../server/CannonBall';
 
 export const cameraPosition = { x: 0, y: 0 };
 // Get the canvas graphics context
@@ -31,6 +32,7 @@ function initializeDrawing(meGod: any, mePlayer: any) {
 	else
 		drawBackground(mePlayer.x, mePlayer.y);
 }
+//var first = true;
 function drawBackground(camX: number, camY: number) {
 	var canvasX = canvas.width / 2 - camX;
 	var canvasY = canvas.height / 2 - camY;
@@ -47,17 +49,31 @@ function drawBackground(camX: number, camY: number) {
 	context.fillRect(0, 0, canvas.width, canvas.height);
 	context.save();
 	context.translate(-camX + canvas.width / 2, -camY + canvas.height / 2);
+	/*
+	if (first) {
+		var shift = -16400;
+		var s = "";
+		first = false;
+		for (var x = -800; x <= Constants.MAP_WIDTH + 800; x += 80) {
+			for (var y = -800; y <= Constants.MAP_HEIGHT + 800; y += 80) {
+				var xCheck = x + shift;
+				var yCheck = y + shift;
+				if ((xCheck % 4240 == 0 && yCheck % 2320 == 0) || (xCheck % 3520 == 0 && yCheck % 3120 == 0) || (xCheck % 3200 == 0 && yCheck % 2080 == 0) || (xCheck % 8320 == 0 && yCheck % 4240 == 0) || (xCheck % 2880 == 0 && yCheck % 2820 == 0) || (xCheck % 4400 == 0 && yCheck % 3280 == 0) || (xCheck % 3280 == 0 && yCheck % 2400 == 0) || (xCheck % 2720 == 0 && yCheck % 1280 == 0) || (xCheck % 2240 == 0 && yCheck % 3000 == 0) || (xCheck % 1120 == 0 && yCheck % 4000 == 0) || (xCheck % 1120 == 0 && yCheck % 3040 == 0) || (xCheck % 2160 == 0 && yCheck % 3440 == 0)) {
+					s += "x == " + x + " && y == " + y + " || ";
+				}
+			}
+		}
+		console.log(s);
+	}
+	*/
 	for (var x = camX - canvas.width / 2 - 400; x < camX + canvas.width / 2 + 400; x += 80) {
 		for (var y = camY - canvas.height / 2 - 400; y < camY + canvas.height / 2 + 400; y += 80) {
 			context.save();
 			x = Math.ceil(x / 80) * 80;
 			y = Math.ceil(y / 80) * 80;
-			var shift = -16400;
-			var xCheck = x + shift;
-			var yCheck = y + shift;
 			context.translate(x, y);
-			if ((xCheck % 4240 == 0 && yCheck % 2320 == 0) || (xCheck % 3520 == 0 && yCheck % 3120 == 0) || (xCheck % 3200 == 0 && yCheck % 2080 == 0) || (xCheck % 8320 == 0 && yCheck % 4240 == 0) || (xCheck % 2880 == 0 && yCheck % 2820 == 0) || (xCheck % 4400 == 0 && yCheck % 3280 == 0) || (xCheck % 3280 == 0 && yCheck % 2400 == 0) || (xCheck % 2720 == 0 && yCheck % 1280 == 0) || (xCheck % 2240 == 0 && yCheck % 3000 == 0) || (xCheck % 1120 == 0 && yCheck % 4000 == 0) || (xCheck % 1120 == 0 && yCheck % 3040 == 0) || (xCheck % 2160 == 0 && yCheck % 3440 == 0)) {
-				if (((yCheck < shift + Constants.MAP_HEIGHT * .25))) {
+			if (x == -560 && y == 160 || x == -560 && y == 2480 || x == -560 && y == 4800 || x == -400 && y == 400 || x == -400 && y == 1200 || x == -400 && y == 4240 || x == -400 && y == 4400 || x == -240 && y == -560 || x == -240 && y == 3680 || x == 0 && y == -400 || x == 0 && y == 2000 || x == 0 && y == 4400 || x == 80 && y == -240 || x == 80 && y == 1040 || x == 80 && y == 2320 || x == 80 && y == 3600 || x == 80 && y == 4880 || x == 400 && y == -240 || x == 400 && y == 1840 || x == 400 && y == 3920 || x == 720 && y == 400 || x == 720 && y == 1200 || x == 720 && y == 4240 || x == 720 && y == 4400 || x == 1280 && y == -800 || x == 1280 && y == 2640 || x == 1840 && y == 400 || x == 1840 && y == 1200 || x == 1840 && y == 4240 || x == 1840 && y == 4400 || x == 2000 && y == 5120 || x == 2320 && y == 800 || x == 2320 && y == 3920 || x == 2800 && y == -240 || x == 2800 && y == 1040 || x == 2800 && y == 2320 || x == 2800 && y == 3600 || x == 2800 && y == 4880 || x == 2960 && y == 400 || x == 2960 && y == 1200 || x == 2960 && y == 4240 || x == 2960 && y == 4400 || x == 3200 && y == 0 || x == 3200 && y == 3280 || x == 3280 && y == -400 || x == 3280 && y == 2000 || x == 3280 && y == 4400 || x == 3440 && y == -800 || x == 3440 && y == 2640 || x == 3600 && y == -240 || x == 3600 && y == 1840 || x == 3600 && y == 3920 || x == 3680 && y == 160 || x == 3680 && y == 2480 || x == 3680 && y == 4800 || x == 4080 && y == 400 || x == 4080 && y == 1200 || x == 4080 && y == 4240 || x == 4080 && y == 4400 || x == 4880 && y == 5120 || x == 5200 && y == 400 || x == 5200 && y == 1200 || x == 5200 && y == 4240 || x == 5200 && y == 4400) {
+				if (((y < Constants.MAP_HEIGHT * .25))) {
 					context.beginPath();
 					context.fillStyle = "#FFDB51";
 					context.beginPath();
@@ -76,7 +92,7 @@ function drawBackground(camX: number, camY: number) {
 					context.closePath();
 					context.fill();
 				}
-				if ((yCheck > shift + Constants.MAP_HEIGHT * .10)) {
+				if ((y > Constants.MAP_HEIGHT * .10)) {
 					context.beginPath();
 					context.moveTo(170, 80);
 					context.bezierCurveTo(130, 100, 130, 150, 230, 150);
@@ -102,7 +118,7 @@ function drawBackground(camX: number, camY: number) {
 }
 
 function render() {
-	const { meGod, mePlayer, otherGods, otherPlayers, blocks, ships, planets } = getCurrentState();
+	const { meGod, mePlayer, otherGods, otherPlayers, blocks, ships, planets, cannonBalls, explosions } = getCurrentState();
 	initializeDrawing(meGod, mePlayer);
 	drawMe(meGod as godUpdate, mePlayer as playerUpdate);
 	drawOtherGods(otherGods as godUpdate[]);
@@ -110,7 +126,42 @@ function render() {
 	drawBlocks(planets as blockUpdate[]);
 	drawOtherPlayers(otherPlayers as playerUpdate[]);
 	drawShips(ships as shipUpdate[]);
+	drawCannonBalls(cannonBalls as objectUpdate[]);
+	drawExplosions(explosions as objectUpdate[]);
 	context.restore();
+}
+function drawCannonBalls(cannonBalls: objectUpdate[]) {
+	if (!cannonBalls)
+		return;
+	cannonBalls.forEach(cannonBall => {
+		if (cannonBall) {
+			console.log("B");
+			context.save();
+			context.translate(cannonBall.x, cannonBall.y);
+			context.fillStyle = "black";
+			context.beginPath();
+			context.arc(0, 0, 10, 0, 2 * Math.PI);
+			context.closePath();
+			context.fill();
+			context.restore();
+		}
+	});
+}
+function drawExplosions(explosions: objectUpdate[]) {
+	if (!explosions)
+		return;
+	explosions.forEach(explo => {
+		if (explo) {
+			console.log("B");
+			context.save();
+			context.translate(explo.x, explo.y);
+			context.beginPath();
+			context.arc(0, 0, 18, 0, 2 * Math.PI);
+			context.closePath();
+			context.fill();
+			context.restore();
+		}
+	});
 }
 function drawMe(meGod: godUpdate | undefined, mePlayer: playerUpdate | undefined) {
 
@@ -205,6 +256,9 @@ function drawCannon(cannon: cannonUpdate) {
 	context.arc(cannon.x, cannon.y, 10, 0, 2 * Math.PI);
 	context.fill();
 	drawPolygon(cannon.x, cannon.y, cannon.points);
+	context.fillStyle = "rgb(" + cannon.power + ",0,0)";
+	context.fill();
+	context.fillStyle = "red";
 }
 function drawShip(ship: shipUpdate) {
 	if (!context)

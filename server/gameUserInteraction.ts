@@ -88,6 +88,9 @@ export function stopRight(id: string) {
 export function playerJump(id: string) {
   game.players[id]?.jump();
 }
+export function playerStopSpace(id: string) {
+  game.players[id]?.stopSpace();
+}
 export function playerStartHolding(id: string) {
   game.players[id]?.startInteracting();
 }

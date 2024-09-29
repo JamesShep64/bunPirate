@@ -38,7 +38,7 @@ export function recordActions() {
 
 	});
 	window.addEventListener('keyup', (event) => {
-		if (event.key === 'w' || event.key === 'a' || event.key === 's' || event.key === 'd' || event.key == "j" || event.key == "k" || event.key == "l")
+		if (event.key === 'w' || event.key === 'a' || event.key === 's' || event.key === 'd' || event.key == "j" || event.key == "k" || event.key == "l" || event.key == " ")
 			handleKeyUp(event.key);
 	});
 	setInterval(sendActions, 1000 / 30);

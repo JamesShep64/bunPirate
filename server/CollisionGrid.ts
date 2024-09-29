@@ -3,17 +3,32 @@ import { Player } from "./Player";
 import { Block } from "./Block";
 import { PirateShip } from "./PirateShip";
 import { Vector } from "../shared/Vector";
-import { polygonPlanetCollision, polygonPolygonCollision, shipShipCollision, polygonShipCollision } from "./collisions";
+import { polygonPlanetCollision, polygonPolygonCollision, shipShipCollision, polygonShipCollision, checkHalfPolygonPolygonCollision } from "./collisions";
+import { CannonBall } from "./CannonBall";
+import { game } from "./users";
+import { Explosion } from "./Explosion";
 export class CollisionSection {
   players: { [key: string]: Player };
   blocks: { [key: string]: Block };
   ships: { [key: string]: PirateShip };
   planets: { [key: string]: Planet };
+  cannonBalls: { [key: string]: CannonBall };
+  explosions: { [key: string]: Explosion };
   constructor() {
     this.players = {};
     this.blocks = {};
     this.ships = {};
     this.planets = {};
+    this.cannonBalls = {};
+    this.explosions = {};
+  }
+  clear() {
+    this.players = {};
+    this.blocks = {};
+    this.ships = {};
+    this.planets = {};
+    this.cannonBalls = {};
+    this.explosions = {};
   }
   CheckCollisions(left: CollisionSection, right: CollisionSection, up: CollisionSection, down: CollisionSection, upLeft: CollisionSection, upRight: CollisionSection, downLeft: CollisionSection, downRight: CollisionSection) {
     const players = {
@@ -60,6 +75,28 @@ export class CollisionSection {
       ...upRight.planets,
       ...downLeft.planets,
       ...downRight.planets,
+    };
+    const cannonBalls = {
+      ...this.cannonBalls,
+      ...left.cannonBalls,
+      ...right.cannonBalls,
+      ...up.cannonBalls,
+      ...down.cannonBalls,
+      ...upLeft.cannonBalls,
+      ...upRight.cannonBalls,
+      ...downLeft.cannonBalls,
+      ...downRight.cannonBalls,
+    }
+    const explosions = {
+      ...this.explosions,
+      ...left.explosions,
+      ...right.explosions,
+      ...up.explosions,
+      ...down.explosions,
+      ...upLeft.explosions,
+      ...upRight.explosions,
+      ...downLeft.explosions,
+      ...downRight.explosions,
     };
     //player block collision
     Object.values(players).forEach((player) => {
@@ -124,6 +161,37 @@ export class CollisionSection {
         })
       });
     });
-
+    //cannonBall Ship Collision
+    Object.values(cannonBalls).forEach(ball => {
+      Object.values(ships).forEach(ship => {
+        const col = checkHalfPolygonPolygonCollision(ball, ship.bodyPoly);
+        if (col) {
+          game.deleteCannonBall(ball);
+        }
+      });
+    });
+    //cannonBall Planet Collision
+    Object.values(cannonBalls).forEach(ball => {
+      Object.values(planets).forEach(planet => {
+        const col = checkHalfPolygonPolygonCollision(ball, planet);
+        if (col) {
+          game.deleteCannonBall(ball);
+          delete cannonBalls[ball.id];
+        }
+      });
+    });
+    //explosion Player Collision
+    Object.values(explosions).forEach(explo => {
+      Object.values(players).forEach(player => {
+        if (explo.checkWithinRect(player.hitBox)) {
+          const push = player.pos.copy();
+          push.subtract(explo.pos);
+          push.unit();
+          player.addExplosionVelocity(push);
+          explo.playerIDs.push(player.id);
+        }
+      });
+    });
   }
+
 }

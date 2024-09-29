@@ -1,24 +1,42 @@
 import { Constants } from "../shared/constants";
 import { Vector } from "../shared/Vector";
 import { Block } from "./Block";
+import { CannonBall } from "./CannonBall";
+import { Explosion } from "./Explosion";
 import { PirateShip } from "./PirateShip";
 import { Planet } from "./Planet";
 import { Player } from "./Player";
 import { Polygon } from "./polygon";
 import { game } from "./users";
 export function putInGrid(pos: Vector, obj: any) {
+  var x = pos.x;
+  var y = pos.y;
+  if (pos.x < 0)
+    x = 0;
+  if (pos.x > Constants.MAP_WIDTH)
+    x = Constants.MAP_WIDTH - 1;
+  if (pos.y < 0)
+    y = 0;
+  if (pos.y > Constants.MAP_HEIGHT)
+    y = Constants.MAP_HEIGHT - 1;
   switch (true) {
     case obj instanceof PirateShip:
-      game.collisionGrid[~~((pos.x) / 500)][~~(pos.y / 500)].ships[obj.id] = obj;
+      game.collisionGrid[~~((x) / 500)][~~(y / 500)].ships[obj.id] = obj;
       break;
     case obj instanceof Player:
-      game.collisionGrid[~~((pos.x) / 500)][~~(pos.y / 500)].players[obj.id] = obj;
+      game.collisionGrid[~~((x) / 500)][~~(y / 500)].players[obj.id] = obj;
       break;
     case obj instanceof Planet:
-      game.collisionGrid[~~((pos.x) / 500)][~~(pos.y / 500)].planets[obj.id] = obj;
+      game.collisionGrid[~~((x) / 500)][~~(y / 500)].planets[obj.id] = obj;
       break;
     case obj instanceof Block:
-      game.collisionGrid[~~((pos.x) / 500)][~~(pos.y / 500)].blocks[obj.id] = obj;
+      game.collisionGrid[~~((x) / 500)][~~(y / 500)].blocks[obj.id] = obj;
+      break;
+    case obj instanceof CannonBall:
+      game.collisionGrid[~~((x) / 500)][~~(y / 500)].cannonBalls[obj.id] = obj;
+      break;
+    case obj instanceof Explosion:
+      game.collisionGrid[~~((x) / 500)][~~(y / 500)].explosions[obj.id] = obj;
       break;
   }
 }

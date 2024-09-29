@@ -5,6 +5,7 @@ import { PhysicsObject } from "./PhysicsObject";
 import { PirateShip } from "./PirateShip";
 import { Constants } from "../shared/constants";
 import { putInGrid } from "./collisions";
+import { Ticker } from "./Ticker";
 export class Player extends Controllable {
   hitBox: Polygon;
   width: number;
@@ -16,7 +17,10 @@ export class Player extends Controllable {
   onLadder: boolean;
   interacting: boolean;
   isInteracting: boolean;
+  spaceDown: boolean;
+  gotExploded: boolean = false;
   shipAboard: PirateShip | undefined;
+
   constructor(id: string, x: number, y: number) {
     super(x, y);
     this.id = id;
@@ -31,21 +35,27 @@ export class Player extends Controllable {
     this.onLadder = false;
     this.interacting = false;
     this.isInteracting = false;
+    this.spaceDown = false;
     //this.physicsObject.gravityOn = false;
 
   }
   update() {
+    var isExploded = false;
+    if (this.gotExploded && Object.values(this.physicsObject.physicsVelocities).length != 0)
+      isExploded = true;
+    else
+      this.gotExploded = false;
     if (this.horizontalMove.x < 0)
       this.horizontalMove.unitMultiply(-1);
-    if (this.movingRight && !this.isInteracting)
+    if (this.movingRight && !this.isInteracting && !isExploded)
       this.physicsObject.addVelocity(this.horizontalMove);
-    if (this.movingLeft && !this.isInteracting)
+    if (this.movingLeft && !this.isInteracting && !isExploded)
       this.physicsObject.subtractVelocity(this.horizontalMove);
 
-    if (this.movingDown && this.onLadder) {
+    if (this.movingDown && this.onLadder && !isExploded) {
       this.physicsObject.addVelocity(this.verticalMove);
     }
-    if (this.movingUp && this.onLadder) {
+    if (this.movingUp && this.onLadder && !isExploded) {
       this.physicsObject.subtractVelocity(this.verticalMove);
       this.jumpTicks = 0;
     }
@@ -70,6 +80,10 @@ export class Player extends Controllable {
       this.jumpTicks--;
     }
   }
+  addExplosionVelocity(vec: Vector) {
+    this.physicsObject.addExplosionVelocity(vec);
+    this.gotExploded = true;
+  }
   applyFriction(vec: Vector, po?: PhysicsObject | undefined, polygon?: Polygon) {
     const forward = vec.unitReturn();
     this.horizontalMove.set(forward.x, forward.y);
@@ -88,11 +102,15 @@ export class Player extends Controllable {
     this.physicsObject.gravityOn = !this.physicsObject.gravityOn;
   }
   jump() {
-    if ((this.physicsObject.onFloor || this.onLadder) && this.jumpTicks == 0 && !this.isInteracting) {
+    this.spaceDown = true;
+    if ((this.physicsObject.onFloor || this.onLadder) && this.jumpTicks == 0 && !this.isInteracting && !this.interacting) {
       this.onLadder = false;
       this.jumpTicks = 25;
       this.movingUp = false;
     }
+  }
+  stopSpace() {
+    this.spaceDown = false;
   }
   moveUp() {
     if (!this.movingDown) {

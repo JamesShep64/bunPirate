@@ -9,6 +9,8 @@ import { Constants } from "../shared/constants";
 import { Lobby } from "./Lobby";
 import { Planet } from "./Planet";
 import { CollisionSection } from "./CollisionGrid";
+import { CannonBall } from "./CannonBall";
+import { Explosion } from "./Explosion";
 
 export class Game {
   users: string[];
@@ -17,14 +19,19 @@ export class Game {
   blocks: { [key: string]: Block };
   ships: { [key: string]: PirateShip };
   planets: { [key: string]: Planet };
+  cannonBalls: { [key: string]: CannonBall };
+  explosions: { [key: string]: Explosion };
   collisionGrid: CollisionSection[][];
   intervalID: Timer;
+
   constructor() {
     this.gods = {};
     this.blocks = {};
     this.players = {};
     this.ships = {};
     this.planets = {};
+    this.cannonBalls = {};
+    this.explosions = {};
     this.users = [];
     this.collisionGrid = Array.from({ length: ~~(Constants.MAP_WIDTH / 500) }, () => Array.from({ length: ~~(Constants.MAP_HEIGHT / 500) }, () => new CollisionSection()));
     this.intervalID = setInterval(this.update.bind(this), 1000 / 30);
@@ -67,25 +74,49 @@ export class Game {
       this.disconnect(userID);
     });
   }
+  addCannonBall(cannonBall: CannonBall) {
+    this.cannonBalls[cannonBall.id] = cannonBall;
+  }
+  deleteCannonBall(cannonBall: CannonBall, dontExplode = false) {
+    if (!dontExplode) {
+      var id = generateUniqueId({ length: 8 });
+      this.addExplosion(new Explosion(cannonBall.pos.x, cannonBall.pos.y, id));
+    }
+    delete this.cannonBalls[cannonBall.id];
+  }
+  addExplosion(explosion: Explosion) {
+    this.explosions[explosion.id] = explosion;
+  }
+  deleteExplosion(explosion: Explosion) {
+    var id = explosion.id;
+    delete this.explosions[id];
+  }
   update() {
     Object.values(this.gods).forEach(god => god.update());
     Object.values(this.ships).forEach(ship => ship.update());
     Object.values(this.blocks).forEach(block => block.update());
+    Object.values(this.planets).forEach(planet => planet.update());
     Object.values(this.players).forEach(player => player.update());
-    //update the displacments of all physics objects
-    Object.values(this.ships).forEach(ship => ship.physicsObject.updateDisplace());
-    Object.values(this.players).forEach(player => player.physicsObject.updateDisplace());
+    Object.values(this.cannonBalls).forEach(ball => ball.update());
+    Object.values(this.explosions).forEach(explo => explo.update());
     for (var i = 1; i < this.collisionGrid.length; i += 2) {
       for (var j = 1; j < this.collisionGrid[0].length; j += 2) {
         this.collisionGrid[i][j].CheckCollisions(this.collisionGrid[i - 1][j], this.collisionGrid[i + 1][j], this.collisionGrid[i][j + 1], this.collisionGrid[i][j - 1], this.collisionGrid[i - 1][j - 1], this.collisionGrid[i + 1][j + 1], this.collisionGrid[i - 1][j + 1], this.collisionGrid[i + 1][j - 1]);
       }
     }
+    //update the displacments of all physics objects
+    Object.values(this.ships).forEach(ship => ship.physicsObject.updateDisplace());
+    Object.values(this.players).forEach(player => player.physicsObject.updateDisplace());
     //send updates to all users
     this.users.forEach((id: string) => {
       if (id)
         this.createUpdate(id);
     });
-
+    for (var i = 0; i < this.collisionGrid.length; i += 1) {
+      for (var j = 0; j < this.collisionGrid[0].length; j += 1) {
+        this.collisionGrid[i][j].clear();
+      }
+    }
   }
   createUpdate(id: string) {
     const otherGods = Object.keys(this.gods).filter((key: string) => key !== id).map((key) => this.gods[key]);
@@ -99,7 +130,9 @@ export class Game {
         otherPlayers: otherPlayers.map((player) => player.serializeForUpdate()),
         blocks: Object.values(this.blocks).map((block) => block.serializeForUpdate()),
         ships: Object.values(this.ships).map((ship) => ship.serializeForUpdate()),
-        planets: Object.values(this.planets).map((planet) => planet.serializeForUpdate())
+        planets: Object.values(this.planets).map((planet) => planet.serializeForUpdate()),
+        cannonBalls: Object.values(this.cannonBalls).map((ball => ball.serializeForUpdate())),
+        explosions: Object.values(this.explosions).map((explo => explo.serializeForUpdate())),
       });
 
   }

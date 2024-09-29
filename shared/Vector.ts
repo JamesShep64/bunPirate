@@ -22,6 +22,10 @@ export class Vector {
 		this.x = other.x;
 		this.y = other.y;
 	}
+	unit() {
+		this.x = this.x / Math.sqrt(this.x * this.x + this.y * this.y);
+		this.y = this.y / Math.sqrt(this.x * this.x + this.y * this.y);
+	}
 	unitReturn() {
 		return new Vector(this.x / Math.sqrt(this.x * this.x + this.y * this.y), this.y / Math.sqrt(this.x * this.x + this.y * this.y));
 	}

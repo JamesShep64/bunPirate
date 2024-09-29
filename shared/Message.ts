@@ -57,6 +57,8 @@ export interface gameUpdate {
 	blocks: blockUpdate[];
 	ships: shipUpdate[];
 	planets: planetUpdate[];
+	cannonBalls: objectUpdate[];
+	explosions: objectUpdate[];
 }
 
 export interface lobbyUpdate {
@@ -90,7 +92,8 @@ export interface cannonUpdate {
 	id: string;
 	x: number;
 	y: number;
-	points: vectorUpdate[]
+	points: vectorUpdate[];
+	power: number;
 }
 export interface godUpdate extends objectUpdate {
 	placeY: number;

@@ -1,6 +1,5 @@
 import { Constants } from "../shared/constants";
 import { Vector } from "../shared/Vector";
-import { game } from "./users";
 export class Polygon {
   points: Vector[];
   radius: number;
@@ -61,8 +60,8 @@ export class Polygon {
     this.collisionIDs.push(other.id);
     other.collisionIDs.push(this.id);
   }
-  checkIfCollision(other : Polygon) {
-    if(this.collisionIDs.indexOf(other.id) != -1)
+  checkIfCollision(other: Polygon) {
+    if (this.collisionIDs.indexOf(other.id) != -1)
       return true;
     return false;
   }
