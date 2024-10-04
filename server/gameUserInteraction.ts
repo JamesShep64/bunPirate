@@ -97,6 +97,12 @@ export function playerStartHolding(id: string) {
 export function playerStopHolding(id: string) {
   game.players[id]?.stopInteracting();
 }
+export function playerStartSecondaryInteract(id: string) {
+  game.players[id]?.startSecondaryInteracting();
+}
+export function playerStopSecondaryInteract(id: string) {
+  game.players[id]?.stopSecondaryInteracting();
+}
 export function godAddBlock(id: string) {
   const blockID = generateUniqueId({ length: 8 });
   game.blocks[blockID] = new Block(blockID, game.gods[id].placePoint.x, game.gods[id].placePoint.y, 50, 50);
@@ -116,9 +122,11 @@ export function godTogglePlayerGravity(id: string) {
 }
 export function godRotateShip(id: string, angle: number) {
   if (game.gods[id].controlledShip) {
-    game.gods[id].controlledShip.rotate(angle * Math.PI);
+    game.gods[id].controlledShip.rotate(angle * Math.PI, true);
+    console.log("ship at", game.gods[id].controlledShip.bodyPoly.direction / Math.PI);
   }
 }
+
 export function godAddShip(id: string) {
   const shipID = generateUniqueId({ length: 8 });
   var ship = new PirateShip(shipID, game.gods[id].placePoint.x, game.gods[id].placePoint.y);

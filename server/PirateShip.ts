@@ -10,6 +10,8 @@ import { checkHalfPolygonPolygonCollision, putInGrid } from "./collisions";
 import { Queue } from "./Queue";
 import { Cannon } from "./Cannon";
 import { Grapple } from "./Grapple";
+import { game } from "./users";
+import { Munitions } from "./Munitions";
 export class PirateShip {
   pos: Vector;
   displace: Vector;
@@ -27,10 +29,8 @@ export class PirateShip {
   controlled: boolean;
   freeze: boolean;
   turn: number;
+  upsideDown: boolean = false;
   physicsObject: PhysicsObject;
-  farLeft: number;
-  farRight: number;
-  netVelocity: Vector;
   ladder: Polygon;
   spawnPoint: Polygon;
   shipsCollided: string[];
@@ -38,6 +38,7 @@ export class PirateShip {
   rollingVelocityMult: number;
   topPortCannon: Cannon;
   grapple: Grapple | undefined;
+  munitions: Munitions = new Munitions();
   constructor(id: string, x: number, y: number) {
     this.id = id;
     this.pos = new Vector(x, y);
@@ -60,8 +61,6 @@ export class PirateShip {
     this.collisionZerosPolygon = new Polygon(0, 0, [new Vector(-210, -20), new Vector(-45, -20), new Vector(-45, -10), new Vector(45, -10), new Vector(45, -20), new Vector(210, -20), new Vector(210, -10), new Vector(130, 90), new Vector(-130, 90), new Vector(-210, -10)], false, 220);
     this.ladder = new Polygon(0, 0, [new Vector(-10, -30), new Vector(10, -30), new Vector(10, 50), new Vector(-10, 50)], true, 90);
     this.spawnPoint = new Polygon(0, 0, [new Vector(100, -50)], false, 0);
-    this.farLeft = -230;
-    this.farRight = 230;
     this.topPortCannon = new Cannon(-180, -40, this.pos, this);
     this.collisionZerosPolygon.pos = this.pos;
     this.ladder.pos = this.pos;
@@ -70,20 +69,24 @@ export class PirateShip {
     this.spawnPoint.pos = this.pos;
     this.missingZeros = [3, 4, 5, 6];
     this.floors = [0, 4, 8];
-    this.netVelocity = this.physicsObject.netVelocity;
   }
   update() {
+    /*
     if (this.rollingAverage.ticks == 0) {
       this.rollingAverage.add(this.bodyPoly.direction);
       if (this.rollingAverage.items.length == this.rollingAverage.maxLength) {
         this.rollingAverage.average();
         this.rollingVelocityMult = 1 - 25 * Math.abs(this.bodyPoly.direction - this.rollingAverage.averageItem);
+        if (this.rollingVelocityMult < 0 || this.rollingVelocityMult > 1) {
+          this.rollingVelocityMult = .5;
+        }
       }
     }
-    this.shipsCollided.length = 0;
+        */
     this.getTorque();
     this.applyTorque();
     this.forward.set(this.bodyPoly.points[1].x - this.bodyPoly.points[0].x, this.bodyPoly.points[1].y - this.bodyPoly.points[0].y);
+    this.orbit();
     if (!this.freeze)
       this.physicsObject.addVelocity(this.forward.unitMultiplyReturn(this.turn * .007 * this.rollingVelocityMult));
     this.bodyPoly.update();
@@ -93,10 +96,10 @@ export class PirateShip {
     if (this.pos.x > Constants.MAP_WIDTH || this.pos.x < 0)
       this.turn *= -1;
     if (this.pos.y > Constants.MAP_HEIGHT) {
-      this.rotate(Math.PI / 2);
+      this.rotate(Math.PI / 2, true);
     }
-    if (this.pos.y < -Constants.MAP_HEIGHT) {
-      this.rotate(-Math.PI / 2);
+    if (this.pos.y < 0) {
+      this.rotate(-Math.PI / 2, true);
     }
     this.playerLadderCollisions();
     this.playerCannonCollisions();
@@ -104,16 +107,33 @@ export class PirateShip {
     this.rollingAverage.update();
     putInGrid(this.pos, this);
   }
+  orbit() {
+    if (this.grapple?.grappled) {
+      const grapVec = this.grapple.pos.subtractReturn(this.pos);
+      const angle = Math.acos(grapVec.dot(this.forward) / (grapVec.magnatude() * this.forward.magnatude()));
+      if (angle < .4 * Math.PI || angle > .9 * Math.PI) {
+        game.deleteGrapple(this.grapple);
+        return;
+      }
+      this.rotate(-.03 * (angle - Math.PI * .4), true);
+
+    }
+
+  }
   getTorque() {
     //player torque
     this.torque = 0;
+    var upsideDownMult = 1;
+    if (this.upsideDown)
+      upsideDownMult = -1;
+
     Object.values(this.players).forEach(player => {
       if (player.physicsObject.onFloor)
-        this.torque += (player.pos.x - this.pos.x) / 600;
+        this.torque += upsideDownMult * (player.pos.x - this.pos.x) / 600;
     });
     this.masses.forEach(mass => {
       if (mass) {
-        this.torque += mass.weight * (mass.poly.points[0].x) / 600;
+        this.torque += upsideDownMult * mass.weight * (mass.poly.points[0].x) / 600;
       }
     });
   }
@@ -137,6 +157,11 @@ export class PirateShip {
         }
       });
     }
+    if ((this.bodyPoly.direction > .5 * Math.PI && this.bodyPoly.direction < 1.5 * Math.PI) || (this.bodyPoly.direction < -.5 * Math.PI && this.bodyPoly.direction > -1.5 * Math.PI)) {
+      this.upsideDown = true;
+    }
+    else
+      this.upsideDown = false;
   }
   playerLadderCollisions() {
     Object.values(this.players).forEach(player => {
@@ -198,6 +223,8 @@ export class PirateShip {
       masses: this.masses.map(mass => mass.serializeForUpdates()),
       ladder: this.ladder.points.map(point => point.serializeForUpdates()),
       topPortCannon: this.topPortCannon.serializeForUpdate(),
+      munitions: this.munitions.getLoadOut(),
+      direction: this.bodyPoly.direction,
     } as shipUpdate;
   }
 

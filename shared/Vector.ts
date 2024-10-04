@@ -10,6 +10,9 @@ export class Vector {
 		this.x -= vec.x;
 		this.y -= vec.y;
 	}
+	subtractReturn(vec: Vector) {
+		return new Vector(this.x - vec.x, this.y - vec.y);
+	}
 	divide(vec: Vector) {
 		this.x /= vec.x;
 		this.y /= vec.y;
@@ -50,6 +53,9 @@ export class Vector {
 	add(vec: Vector) {
 		this.x += vec.x;
 		this.y += vec.y;
+	}
+	addReturn(vec: Vector) {
+		return new Vector(this.x + vec.x, this.y + vec.y);
 	}
 	addX(num: number) {
 		this.x += num;

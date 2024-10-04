@@ -9,8 +9,10 @@ export class Explosion {
   id: string;
   count: number = 20;
   playerIDs: string[];
-  constructor(x: number, y: number, id: string) {
+  constructor(x: number, y: number, id: string, size?: number) {
     this.id = id;
+    if (size)
+      this.size = size;
     this.pos = new Vector(x, y);
     this.playerIDs = [];
   }

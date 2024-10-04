@@ -1,6 +1,6 @@
 import { upgradePromise, sendMessage } from "./networking";
 import { Constants } from "../shared/constants";
-import { downloadAssets, getAsset } from "./assets";
+import { createPromises, downloadPromise, getAsset } from "./assets";
 import { serverMessageHandler } from "./messaging"
 import { ClientPayload, gameUpdate, lobbyUpdate, Message, playerJoinLobby } from "../shared/Message";
 import { recordActions, recordMouse } from "./inputs";
@@ -12,8 +12,8 @@ import { processGameUpdate } from "./state";
 const fullPath = window.location.pathname;
 
 const fileName = fullPath.substring(fullPath.lastIndexOf('/') + 1);
-
-Promise.all([downloadAssets, upgradePromise]).then(() => {
+createPromises();
+Promise.all([upgradePromise]).then(() => {
   console.log("finished!")
 });
 //get ID from server on page open

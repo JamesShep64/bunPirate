@@ -1,4 +1,3 @@
-import { vectorUpdate } from "./Vector";
 import { Constants } from "./constants";
 
 // this the the structure of messages sent through websockets, the message containings a string from Constants which signifies the type of message being sent, and also contains the object which is the contenents of the message
@@ -88,6 +87,8 @@ export interface shipUpdate extends objectUpdate {
 	masses: blockUpdate[];
 	ladder: vectorUpdate[];
 	topPortCannon: cannonUpdate;
+	munitions: string[];
+	direction : number;
 }
 export interface cannonUpdate {
 	id: string;
@@ -95,6 +96,7 @@ export interface cannonUpdate {
 	y: number;
 	points: vectorUpdate[];
 	power: number;
+	munitionIndex: number;
 }
 export interface grappleUpdate extends objectUpdate {
 	launchOrigin: vectorUpdate;
@@ -104,9 +106,11 @@ export interface godUpdate extends objectUpdate {
 }
 export interface playerUpdate extends objectUpdate {
 	points: vectorUpdate[];
+	direction: number;
 	colorR: number;
 	colorG: number;
 	colorB: number;
+	onCannon: boolean;
 }
 export interface godCommand {
 	text: string;

@@ -210,6 +210,7 @@ export class CollisionSection {
         const col = checkHalfPolygonPolygonCollision(ball, planet);
         if (col) {
           ball.pos = planet.pos;
+          ball.grappled = true;
         }
       });
     });

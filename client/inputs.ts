@@ -19,8 +19,6 @@ input.addEventListener('keydown', function(event) {
 input.addEventListener('keyup', (e) => {
 	e.stopPropagation();
 });
-
-
 export var toggleInterpolate = true;
 export function recordMouse() {
 	window.addEventListener("mousemove", handleMouseMove);

@@ -8,26 +8,29 @@ export class Grapple extends CannonBall {
   cannonPoint: Vector;
   deleteTicker: number = 50;
   ship: PirateShip;
+  grappled: boolean = false;
+  launchOrigin: Vector;
   constructor(id: string, x: number, y: number, launchVel: Vector, shipPOS: Vector, cannonPoint: Vector, ship: PirateShip) {
     super(id, x, y, launchVel);
     this.shipPOS = shipPOS;
     this.cannonPoint = cannonPoint;
     this.ship = ship;
+    this.launchOrigin = this.shipPOS.copy();
   }
   update() {
-    if (this.deleteTicker == 0)
+    super.update();
+    if (this.deleteTicker == 0 && !this.grappled)
       game.deleteGrapple(this);
     this.deleteTicker--;
-    super.update();
+    this.launchOrigin = this.shipPOS.copy();
+    this.launchOrigin.add(this.cannonPoint);
   }
   serializeForUpdate() {
-    const launchOrigin = this.shipPOS.copy();
-    launchOrigin.add(this.cannonPoint);
     return {
       id: this.id,
       x: this.pos.x,
       y: this.pos.y,
-      launchOrigin: launchOrigin.serializeForUpdates(),
+      launchOrigin: this.launchOrigin.serializeForUpdates(),
     }
   }
 }

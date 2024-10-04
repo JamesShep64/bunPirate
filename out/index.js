@@ -112,54 +112,25 @@ window.onbeforeunload = () => {
 };
 
 // ../client/assets.ts
+function createPromises() {
+  downloadPromise = ASSET_NAMES.map(downloadAsset);
+}
 function downloadAsset(assetName) {
   return new Promise((resolve) => {
     const asset = new Image;
-    asset.onload = () => {
-      console.log(`Downloaded ${assetName}`);
-      assets[assetName] = asset;
-      asset.src = `./assets/${assetName}`;
-      resolve("");
-    };
+    assets[assetName] = asset;
+    asset.src = `./assets/${assetName}`;
+    resolve("");
   });
 }
 var ASSET_NAMES = [
-  "player.svg",
+  "cannonBallIcon.svg",
   "icon64.png",
-  "icon1200.png",
-  "page1.gif",
-  "page2.png",
-  "ex.gif",
-  "page2.gif",
-  "page3.gif",
-  "page4.gif",
-  "page5.gif",
-  "page6.gif",
-  "upArrow.png",
-  "downArrow.png",
-  "cannonBall.svg",
-  "grapple.svg",
-  "killShot.svg",
-  "speedBoost.svg",
-  "asteroid.svg",
-  "pirate.svg",
-  "barrel.svg",
-  "cannonBarrel.svg",
-  "cannonTurret.svg",
-  "planet.svg",
-  "cannonLoad.svg",
-  "hairLeft.svg",
-  "hairRight.svg",
-  "headAndTorso.svg",
-  "leftArm.svg",
-  "rightArm.svg",
-  "leftLeg.svg",
-  "rightLeg.svg",
-  "hat.svg"
+  "grappleIcon.svg"
 ];
 var assets = {};
-var downloadPromise = Promise.all(ASSET_NAMES.map(downloadAsset));
-var downloadAssets = () => downloadPromise;
+var downloadPromise;
+var getAsset = (assetName) => assets[assetName];
 
 // ../client/state.ts
 function processGameUpdate(o) {
@@ -318,6 +289,7 @@ function drawBackground(camX, camY) {
           context.lineTo(75 / a, 68 / a);
           context.lineTo(108 / a, 0);
           context.closePath();
+          context.stroke();
           context.fill();
         }
         if (y > Constants.MAP_HEIGHT * 0.1) {
@@ -331,6 +303,7 @@ function drawBackground(camX, camY) {
           context.bezierCurveTo(200, 5, 150, 20, 170, 80);
           context.closePath();
           context.fillStyle = "white";
+          context.stroke();
           context.fill();
         }
       }
@@ -346,6 +319,10 @@ function drawBackground(camX, camY) {
 }
 function render() {
   const { meGod, mePlayer, otherGods, otherPlayers, blocks, ships, planets, cannonBalls, explosions, grapples } = getCurrentState();
+  if (mePlayer)
+    me = mePlayer;
+  context.lineWidth = 2;
+  context.fillStyle = "blue";
   initializeDrawing(meGod, mePlayer);
   drawMe(meGod, mePlayer);
   drawOtherGods(otherGods);
@@ -379,7 +356,6 @@ function drawGrapples(grapples) {
     return;
   grapples.forEach((grapple) => {
     if (grapple) {
-      console.log("B");
       context.save();
       context.beginPath();
       context.moveTo(grapple.x, grapple.y);
@@ -395,7 +371,6 @@ function drawExplosions(explosions) {
     return;
   explosions.forEach((explo) => {
     if (explo) {
-      console.log("B");
       context.save();
       context.translate(explo.x, explo.y);
       context.beginPath();
@@ -424,6 +399,38 @@ function drawMe(meGod, mePlayer) {
     context.fill();
     context.restore();
   }
+}
+function drawLoadout(ship, cannon) {
+  if (!me?.onCannon)
+    return;
+  context.save();
+  context.translate(cannon.x, cannon.y);
+  context.rotate(ship.direction);
+  context.translate(-Constants.PLAYER_WIDTH / 2, -Constants.PLAYER_HEIGHT - 10);
+  var drawPosition = -21 * ship.munitions.length / 4;
+  var i = 0;
+  ship.munitions.forEach((munName) => {
+    switch (munName) {
+      case "CannonBall":
+        context.drawImage(getAsset("cannonBallIcon.svg"), drawPosition, 0, 20, 20);
+        break;
+      case "Grapple":
+        context.drawImage(getAsset("grappleIcon.svg"), drawPosition, 0, 20, 20);
+        break;
+    }
+    if (i == cannon.munitionIndex) {
+      context.save();
+      context.strokeStyle = "#F8FF00";
+      context.beginPath();
+      context.strokeRect(drawPosition, 0, 20, 20);
+      context.closePath();
+      context.stroke();
+      context.restore();
+    }
+    drawPosition += 21;
+    i++;
+  });
+  context.restore();
 }
 function drawOtherGods(otherGods) {
   if (!otherGods)
@@ -499,10 +506,12 @@ function drawPolygon(x, y, points) {
 function drawCannon(cannon) {
   drawPolygon(cannon.x, cannon.y, cannon.points);
   context.fillStyle = "rgb(" + cannon.power + ",0,0)";
+  context.stroke();
   context.fill();
   context.fillStyle = "red";
   context.beginPath();
   context.arc(cannon.x, cannon.y, 10, 0, 2 * Math.PI);
+  context.stroke();
   context.fill();
 }
 function drawShip(ship) {
@@ -542,9 +551,11 @@ function drawShip(ship) {
   context.beginPath();
   context.strokeRect(farLeft, farLeft, farRight - farLeft, farRight - farLeft);
   drawCannon(ship.topPortCannon);
+  drawLoadout(ship, ship.topPortCannon);
   context.restore();
 }
 var cameraPosition = { x: 0, y: 0 };
+var me;
 var canvas = document.getElementById("game-canvas");
 var context = canvas.getContext("2d");
 if (context)
@@ -619,8 +630,8 @@ function deleteDuplicates() {
       checkingArray.push(actionArray[i]);
   }
 }
-function actionEquals(me, other) {
-  switch (me.inputType) {
+function actionEquals(me2, other) {
+  switch (me2.inputType) {
     case Constants.INPUT_TYPES.MOUSE_MOVE:
       if (other.inputType == Constants.INPUT_TYPES.MOUSE_MOVE)
         return true;
@@ -667,7 +678,8 @@ function updateBoard(update) {
 }
 var fullPath = window.location.pathname;
 var fileName = fullPath.substring(fullPath.lastIndexOf("/") + 1);
-Promise.all([downloadAssets, upgradePromise]).then(() => {
+createPromises();
+Promise.all([upgradePromise]).then(() => {
   console.log("finished!");
 });
 serverMessageHandler.on(Constants.MSG_TYPES.WS_ID, (content) => {

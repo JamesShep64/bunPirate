@@ -1,11 +1,10 @@
-import { debounce } from 'throttle-debounce';
 import { getCurrentState } from './state';
-import { Vector } from '../shared/Vector';
-import { blockUpdate, cannonUpdate, godUpdate, grappleUpdate, objectUpdate, playerUpdate, shipUpdate } from '../shared/Message';
+import { blockUpdate, cannonUpdate, godUpdate, grappleUpdate, objectUpdate, playerUpdate, shipUpdate, vectorUpdate } from '../shared/Message';
 import { Constants } from '../shared/constants';
-
+import { getAsset } from './assets';
 export const cameraPosition = { x: 0, y: 0 };
 // Get the canvas graphics context
+var me: playerUpdate;
 const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
 const context = canvas.getContext('2d') as CanvasRenderingContext2D;
 if (context)
@@ -88,6 +87,7 @@ function drawBackground(camX: number, camY: number) {
 					context.lineTo(75 / a, 68 / a);
 					context.lineTo(108 / a, 0);
 					context.closePath();
+					context.stroke();
 					context.fill();
 				}
 				if ((y > Constants.MAP_HEIGHT * .10)) {
@@ -101,6 +101,7 @@ function drawBackground(camX: number, camY: number) {
 					context.bezierCurveTo(200, 5, 150, 20, 170, 80);
 					context.closePath();
 					context.fillStyle = 'white';
+					context.stroke();
 					context.fill();
 				}
 			}
@@ -117,6 +118,10 @@ function drawBackground(camX: number, camY: number) {
 
 function render() {
 	const { meGod, mePlayer, otherGods, otherPlayers, blocks, ships, planets, cannonBalls, explosions, grapples } = getCurrentState();
+	if (mePlayer)
+		me = mePlayer as playerUpdate;
+	context.lineWidth = 2;
+	context.fillStyle = "blue";
 	initializeDrawing(meGod, mePlayer);
 	drawMe(meGod as godUpdate, mePlayer as playerUpdate);
 	drawOtherGods(otherGods as godUpdate[]);
@@ -150,7 +155,6 @@ function drawGrapples(grapples: grappleUpdate[]) {
 		return;
 	grapples.forEach(grapple => {
 		if (grapple) {
-			console.log("B");
 			context.save();
 			context.beginPath();
 			context.moveTo(grapple.x, grapple.y);
@@ -167,7 +171,6 @@ function drawExplosions(explosions: objectUpdate[]) {
 		return;
 	explosions.forEach(explo => {
 		if (explo) {
-			console.log("B");
 			context.save();
 			context.translate(explo.x, explo.y);
 			context.beginPath();
@@ -198,6 +201,38 @@ function drawMe(meGod: godUpdate | undefined, mePlayer: playerUpdate | undefined
 		context.fill();
 		context.restore();
 	}
+}
+function drawLoadout(ship: shipUpdate, cannon: cannonUpdate) {
+	if (!me?.onCannon)
+		return;
+	context.save();
+	context.translate(cannon.x, cannon.y);
+	context.rotate(ship.direction);
+	context.translate(- Constants.PLAYER_WIDTH / 2, - Constants.PLAYER_HEIGHT - 10);
+	var drawPosition = -21 * ship.munitions.length / 4;
+	var i = 0;
+	ship.munitions.forEach(munName => {
+		switch (munName) {
+			case "CannonBall":
+				context.drawImage(getAsset("cannonBallIcon.svg"), drawPosition, 0, 20, 20);
+				break;
+			case "Grapple":
+				context.drawImage(getAsset("grappleIcon.svg"), drawPosition, 0, 20, 20);
+				break;
+		}
+		if (i == cannon.munitionIndex) {
+			context.save();
+			context.strokeStyle = "#F8FF00";
+			context.beginPath();
+			context.strokeRect(drawPosition, 0, 20, 20);
+			context.closePath();
+			context.stroke();
+			context.restore();
+		}
+		drawPosition += 21;
+		i++;
+	});
+	context.restore();
 }
 function drawOtherGods(otherGods: godUpdate[]) {
 
@@ -252,7 +287,7 @@ function drawGod(x: number, y: number) {
 	context.arc(x, y, 100, 0, 2 * Math.PI);
 	context.fill();
 }
-function drawPolygon(x: number, y: number, points: Vector[]) {
+function drawPolygon(x: number, y: number, points: vectorUpdate[]) {
 	if (!context)
 		return;
 	context.save();
@@ -276,12 +311,13 @@ function drawPolygon(x: number, y: number, points: Vector[]) {
 function drawCannon(cannon: cannonUpdate) {
 	drawPolygon(cannon.x, cannon.y, cannon.points);
 	context.fillStyle = "rgb(" + cannon.power + ",0,0)";
+	context.stroke();
 	context.fill();
 	context.fillStyle = "red";
 	context.beginPath();
 	context.arc(cannon.x, cannon.y, 10, 0, 2 * Math.PI);
+	context.stroke();
 	context.fill();
-
 }
 function drawShip(ship: shipUpdate) {
 	if (!context)
@@ -339,6 +375,7 @@ function drawShip(ship: shipUpdate) {
 	context.beginPath();
 	context.strokeRect(farLeft, farLeft, farRight - farLeft, farRight - farLeft);
 	drawCannon(ship.topPortCannon);
+	drawLoadout(ship, ship.topPortCannon);
 	context.restore();
 }
 

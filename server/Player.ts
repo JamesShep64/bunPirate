@@ -5,7 +5,6 @@ import { PhysicsObject } from "./PhysicsObject";
 import { PirateShip } from "./PirateShip";
 import { Constants } from "../shared/constants";
 import { putInGrid } from "./collisions";
-import { Ticker } from "./Ticker";
 export class Player extends Controllable {
   hitBox: Polygon;
   width: number;
@@ -20,8 +19,12 @@ export class Player extends Controllable {
   onLadder: boolean;
   interacting: boolean;
   isInteracting: boolean;
+  secondaryInteracting: boolean;
   spaceDown: boolean;
   gotExploded: boolean = false;
+  munitionIndex: number = 0;
+  munitions: string[] = [];
+  onCannon: boolean = false;
   shipAboard: PirateShip | undefined;
 
   constructor(id: string, x: number, y: number) {
@@ -41,6 +44,7 @@ export class Player extends Controllable {
     this.onLadder = false;
     this.interacting = false;
     this.isInteracting = false;
+    this.secondaryInteracting = false;
     this.spaceDown = false;
     //this.physicsObject.gravityOn = false;
 
@@ -68,6 +72,12 @@ export class Player extends Controllable {
     if (!this.shipAboard) {
       this.applyFriction(new Vector(1, 0));
       this.physicsObject.gravityVelocity.x = 0;
+    }
+    else {
+      this.munitions = this.shipAboard.munitions.getLoadOut();
+    }
+    if (!this.isInteracting) {
+      this.onCannon = false;
     }
     this.updateJumping();
     if (this.onLadder)
@@ -135,6 +145,12 @@ export class Player extends Controllable {
   stopInteracting() {
     this.interacting = false;
   }
+  startSecondaryInteracting() {
+    this.secondaryInteracting = true;
+  }
+  stopSecondaryInteracting() {
+    this.secondaryInteracting = false;
+  }
 
   serializeForUpdate() {
     return {
@@ -145,6 +161,8 @@ export class Player extends Controllable {
       x: this.pos.x,
       y: this.pos.y,
       points: this.hitBox.points.map(point => point.serializeForUpdates()),
+      onCannon: this.onCannon,
+      direction: this.hitBox.direction,
     }
   }
 
