@@ -65,7 +65,7 @@ function handleMouseMove(e: MouseEvent) {
 export var cursPos = { x: 0, y: 0 };
 function handleClick(e: MouseEvent) {
 	const checkedID = ID as string;
-	actionArray.push(new Action(Constants.INPUT_TYPES.MOUSE_CLICK, { x: e.clientX, y: e.clientY }, checkedID));
+	actionArray.push(new Action(Constants.INPUT_TYPES.MOUSE_CLICK, { x: e.clientX - cameraPosition.x, y: e.clientY - cameraPosition.y }, checkedID));
 }
 function handleTextInput(command: string) {
 	const checkedID = ID as string;

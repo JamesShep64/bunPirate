@@ -56,8 +56,9 @@ export interface gameUpdate {
 	blocks: blockUpdate[];
 	ships: shipUpdate[];
 	planets: planetUpdate[];
+	meteors: objectUpdate[];
 	cannonBalls: objectUpdate[];
-	explosions: objectUpdate[];
+	explosions: expolsionUpdate[];
 	grapples: grappleUpdate[];
 }
 
@@ -77,6 +78,9 @@ export interface objectUpdate {
 export interface planetUpdate extends blockUpdate {
 
 }
+export interface expolsionUpdate extends objectUpdate {
+	size: number;
+}
 export interface blockUpdate extends objectUpdate {
 	points: vectorUpdate[];
 }
@@ -88,7 +92,7 @@ export interface shipUpdate extends objectUpdate {
 	ladder: vectorUpdate[];
 	topPortCannon: cannonUpdate;
 	munitions: string[];
-	direction : number;
+	direction: number;
 }
 export interface cannonUpdate {
 	id: string;

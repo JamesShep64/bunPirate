@@ -126,7 +126,19 @@ function downloadAsset(assetName) {
 var ASSET_NAMES = [
   "cannonBallIcon.svg",
   "icon64.png",
-  "grappleIcon.svg"
+  "grappleIcon.svg",
+  "shipTexture.svg",
+  "face.svg",
+  "hair1.svg",
+  "hair2.svg",
+  "hat.svg",
+  "leftArm.svg",
+  "leftLeg.svg",
+  "leftShirt.svg",
+  "rightArm.svg",
+  "rightLeg.svg",
+  "rightShirt.svg",
+  "torso.svg"
 ];
 var assets = {};
 var downloadPromise;
@@ -182,7 +194,8 @@ function getCurrentState() {
       planets: baseUpdate.planets,
       cannonBalls: interpolateObjectArray(baseUpdate.cannonBalls, next.cannonBalls, ratio),
       explosions: interpolateObjectArray(baseUpdate.explosions, next.explosions, ratio),
-      grapples: interpolateGrapples(baseUpdate.grapples, next.grapples, ratio)
+      grapples: interpolateGrapples(baseUpdate.grapples, next.grapples, ratio),
+      meteors: interpolateObjectArray(baseUpdate.meteors, next.meteors, ratio)
     };
   }
 }
@@ -210,7 +223,7 @@ function interpolateObject(base, next, ratio) {
   return base;
 }
 function interpolatePoints(base, next, ratio) {
-  if (!base || !next)
+  if (!base || !next || base.length != next.length)
     return;
   var b = base;
   var n = next;
@@ -242,6 +255,7 @@ var firstServerTimestamp = 0;
 function setCanvasDimensions() {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
+  console.log(canvas.width, canvas.height);
 }
 function initializeDrawing(meGod, mePlayer) {
   if (!meGod && !mePlayer)
@@ -318,7 +332,7 @@ function drawBackground(camX, camY) {
   context.fillStyle = "red";
 }
 function render() {
-  const { meGod, mePlayer, otherGods, otherPlayers, blocks, ships, planets, cannonBalls, explosions, grapples } = getCurrentState();
+  const { meGod, mePlayer, otherGods, otherPlayers, blocks, ships, planets, meteors, cannonBalls, explosions, grapples } = getCurrentState();
   if (mePlayer)
     me = mePlayer;
   context.lineWidth = 2;
@@ -331,6 +345,7 @@ function render() {
   drawOtherPlayers(otherPlayers);
   drawShips(ships);
   drawCannonBalls(cannonBalls);
+  drawMeteors(meteors);
   drawExplosions(explosions);
   drawGrapples(grapples);
   context.restore();
@@ -345,6 +360,22 @@ function drawCannonBalls(cannonBalls) {
       context.fillStyle = "black";
       context.beginPath();
       context.arc(0, 0, 10, 0, 2 * Math.PI);
+      context.closePath();
+      context.fill();
+      context.restore();
+    }
+  });
+}
+function drawMeteors(meteors) {
+  if (!meteors)
+    return;
+  meteors.forEach((meteor) => {
+    if (meteor) {
+      context.save();
+      context.translate(meteor.x, meteor.y);
+      context.fillStyle = "orange";
+      context.beginPath();
+      context.arc(0, 0, 20, 0, 2 * Math.PI);
       context.closePath();
       context.fill();
       context.restore();
@@ -374,19 +405,33 @@ function drawExplosions(explosions) {
       context.save();
       context.translate(explo.x, explo.y);
       context.beginPath();
-      context.arc(0, 0, 18, 0, 2 * Math.PI);
+      context.arc(0, 0, explo.size * 1.2, 0, 2 * Math.PI);
       context.closePath();
       context.fill();
       context.restore();
     }
   });
 }
+function drawPlayerModel(x, y) {
+  context.save();
+  context.translate(x, y);
+  context.scale(0.05, 0.05);
+  context.drawImage(getAsset("face.svg"), 53.293, -800);
+  context.drawImage(getAsset("torso.svg"), 150, -150);
+  context.restore();
+  context.save();
+  context.translate(x, y);
+  context.scale(0.1, 0.1);
+  context.drawImage(getAsset("hair1.svg"), 0, 0);
+  context.drawImage(getAsset("hair2.svg"), 0, 0);
+  context.restore();
+}
 function drawMe(meGod, mePlayer) {
   if (meGod && !mePlayer) {
     context.translate(-meGod.x + canvas.width / 2, -meGod.y + canvas.height / 2);
     cameraPosition.x = -meGod.x + canvas.width / 2;
     cameraPosition.y = -meGod.y + canvas.height / 2;
-    drawGod(meGod.x, meGod.y);
+    drawPlayerModel(meGod.x, meGod.y);
   }
   if (mePlayer) {
     const me = mePlayer;
@@ -479,9 +524,6 @@ function startRendering() {
 function drawGod(x, y) {
   if (!context)
     return;
-  context.beginPath();
-  context.arc(x, y, 100, 0, 2 * Math.PI);
-  context.fill();
 }
 function drawPolygon(x, y, points) {
   if (!context)
@@ -523,20 +565,24 @@ function drawShip(ship) {
   context.arc(0, 0, 10, 0, 2 * Math.PI);
   context.fill();
   context.beginPath();
-  for (var i = 0;i < ship.points.length; i++) {
-    if (i == 0) {
-      context.moveTo(ship.points[i].x, ship.points[i].y);
-    } else {
-      context.lineTo(ship.points[i].x, ship.points[i].y);
-    }
-    if (i == ship.points.length - 1) {
-      context.lineTo(ship.points[0].x, ship.points[0].y);
-    }
-  }
+  drawCatmullRomSpline(ship.points, 4);
   context.closePath();
-  context.stroke();
-  context.fillStyle = "rgb(140, 75, 25)";
-  context.fill();
+  tempCanvas.width = 500;
+  tempCanvas.height = 100;
+  if (tempContext) {
+    tempContext.drawImage(getAsset("shipTexture.svg"), 0, 0);
+    const pattern = context.createPattern(tempCanvas, "repeat-y");
+    context.save();
+    context.rotate(ship.direction);
+    context.translate(-225, -200);
+    if (pattern) {
+      context.fillStyle = pattern;
+    }
+    context.fill();
+    context.stroke();
+    context.restore();
+  }
+  context.fillStyle = "red";
   drawPolygon(0, 0, ship.ladder);
   context.fillStyle = "red";
   if (ship.masses) {
@@ -554,6 +600,40 @@ function drawShip(ship) {
   drawLoadout(ship, ship.topPortCannon);
   context.restore();
 }
+function catmullRom(p0, p1, p2, p3, t) {
+  const t2 = t * t;
+  const t3 = t2 * t;
+  const f0 = -0.5 * t3 + t2 - 0.5 * t;
+  const f1 = 1.5 * t3 - 2.5 * t2 + 1;
+  const f2 = -1.5 * t3 + 2 * t2 + 0.5 * t;
+  const f3 = 0.5 * t3 - 0.5 * t2;
+  return {
+    x: f0 * p0.x + f1 * p1.x + f2 * p2.x + f3 * p3.x,
+    y: f0 * p0.y + f1 * p1.y + f2 * p2.y + f3 * p3.y
+  };
+}
+function drawCatmullRomSpline(points, segments) {
+  context.beginPath();
+  var r = 0;
+  var a = 0;
+  var b = 0;
+  for (let i = 0;i < points.length; i++) {
+    for (let t = 0;t <= 1; t += 1 / segments) {
+      r = i - 1;
+      a = i + 1;
+      b = i + 2;
+      if (a >= points.length)
+        a -= points.length;
+      if (b >= points.length)
+        b -= points.length;
+      if (r < 0)
+        r = points.length - 1;
+      const p = catmullRom(points[r], points[i], points[a], points[b], t);
+      context.lineTo(p.x, p.y);
+    }
+  }
+  context.stroke();
+}
 var cameraPosition = { x: 0, y: 0 };
 var me;
 var canvas = document.getElementById("game-canvas");
@@ -561,6 +641,8 @@ var context = canvas.getContext("2d");
 if (context)
   context.save();
 setCanvasDimensions();
+var tempCanvas = document.createElement("canvas");
+var tempContext = tempCanvas.getContext("2d");
 window.addEventListener("resize", setCanvasDimensions);
 
 // ../client/inputs.ts
@@ -606,7 +688,7 @@ function handleMouseMove(e) {
 }
 function handleClick(e) {
   const checkedID = ID;
-  actionArray.push(new Action(Constants.INPUT_TYPES.MOUSE_CLICK, { x: e.clientX, y: e.clientY }, checkedID));
+  actionArray.push(new Action(Constants.INPUT_TYPES.MOUSE_CLICK, { x: e.clientX - cameraPosition.x, y: e.clientY - cameraPosition.y }, checkedID));
 }
 function handleTextInput(command) {
   const checkedID = ID;

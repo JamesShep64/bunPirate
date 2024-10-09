@@ -12,6 +12,7 @@ import { CollisionSection } from "./CollisionGrid";
 import { CannonBall } from "./CannonBall";
 import { Explosion } from "./Explosion";
 import { Grapple } from "./Grapple";
+import { Meteor } from "./Meteor";
 
 export class Game {
   users: string[];
@@ -20,6 +21,7 @@ export class Game {
   blocks: { [key: string]: Block };
   ships: { [key: string]: PirateShip };
   planets: { [key: string]: Planet };
+  meteors: { [key: string]: Meteor };
   cannonBalls: { [key: string]: CannonBall };
   grapples: { [key: string]: Grapple };
   explosions: { [key: string]: Explosion };
@@ -32,6 +34,7 @@ export class Game {
     this.players = {};
     this.ships = {};
     this.planets = {};
+    this.meteors = {};
     this.cannonBalls = {};
     this.explosions = {};
     this.grapples = {};
@@ -81,12 +84,23 @@ export class Game {
     this.cannonBalls[cannonBall.id] = cannonBall;
   }
   deleteCannonBall(cannonBall: CannonBall, dontExplode = false) {
-    if (!dontExplode) {
+    if (!dontExplode && this.cannonBalls[cannonBall.id]) {
       var id = generateUniqueId({ length: 8 });
       this.addExplosion(new Explosion(cannonBall.pos.x, cannonBall.pos.y, id));
     }
     delete this.cannonBalls[cannonBall.id];
   }
+  addMeteor(met: Meteor) {
+    this.meteors[met.id] = met;
+  }
+  deleteMeteor(met: Meteor, dontExplode = false) {
+    if (!dontExplode && this.meteors[met.id]) {
+      var id = generateUniqueId({ length: 8 });
+      this.addExplosion(new Explosion(met.pos.x, met.pos.y, id, 20));
+    }
+    delete this.meteors[met.id];
+  }
+
   addGrapple(grapple: Grapple) {
     this.grapples[grapple.id] = grapple;
   }
@@ -106,6 +120,7 @@ export class Game {
     Object.values(this.ships).forEach(ship => ship.update());
     Object.values(this.blocks).forEach(block => block.update());
     Object.values(this.planets).forEach(planet => planet.update());
+    Object.values(this.meteors).forEach(meteor => meteor.update());
     Object.values(this.players).forEach(player => player.update());
     Object.values(this.cannonBalls).forEach(ball => ball.update());
     Object.values(this.grapples).forEach(ball => ball.update());
@@ -142,6 +157,7 @@ export class Game {
         blocks: Object.values(this.blocks).map((block) => block.serializeForUpdate()),
         ships: Object.values(this.ships).map((ship) => ship.serializeForUpdate()),
         planets: Object.values(this.planets).map((planet) => planet.serializeForUpdate()),
+        meteors: Object.values(this.meteors).map((meteor) => meteor.serializeForUpdate()),
         cannonBalls: Object.values(this.cannonBalls).map((ball => ball.serializeForUpdate())),
         grapples: Object.values(this.grapples).map((ball => ball.serializeForUpdate())),
         explosions: Object.values(this.explosions).map((explo => explo.serializeForUpdate())),

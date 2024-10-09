@@ -2,6 +2,18 @@ const ASSET_NAMES = [
   'cannonBallIcon.svg',
   'icon64.png',
   'grappleIcon.svg',
+  'shipTexture.svg',
+  'face.svg',
+  'hair1.svg',
+  'hair2.svg',
+  'hat.svg',
+  'leftArm.svg',
+  'leftLeg.svg',
+  'leftShirt.svg',
+  'rightArm.svg',
+  'rightLeg.svg',
+  'rightShirt.svg',
+  'torso.svg',
 ];
 //dictionary of the images
 export const assets: { [key: string]: CanvasImageSource } = {};

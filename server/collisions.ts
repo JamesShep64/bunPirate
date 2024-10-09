@@ -4,6 +4,7 @@ import { Block } from "./Block";
 import { CannonBall } from "./CannonBall";
 import { Explosion } from "./Explosion";
 import { Grapple } from "./Grapple";
+import { Meteor } from "./Meteor";
 import { PirateShip } from "./PirateShip";
 import { Planet } from "./Planet";
 import { Player } from "./Player";
@@ -39,6 +40,9 @@ export function putInGrid(pos: Vector, obj: any) {
     case obj instanceof CannonBall:
       game.collisionGrid[~~((x) / 500)][~~(y / 500)].cannonBalls[obj.id] = obj;
       break;
+    case obj instanceof Meteor:
+      game.collisionGrid[~~((x) / 500)][~~(y / 500)].meteors[obj.id] = obj;
+      break;
     case obj instanceof Explosion:
       game.collisionGrid[~~((x) / 500)][~~(y / 500)].explosions[obj.id] = obj;
       break;
@@ -70,7 +74,41 @@ export function checkHalfPolygonPolygonCollision(poly1: Polygon, poly2: Polygon)
   }
   return false;
 }
-function vectorCollision(zero1: Vector, vec1: Vector, zero2: Vector, vec2: Vector) {
+export function explosiveCollision(poly1: Polygon, poly2: Polygon) {
+  if (poly1.pos.x > poly2.pos.x + poly1.size + poly2.size || poly1.pos.x < poly2.pos.x - poly1.size - poly2.size || poly1.pos.y > poly2.pos.y + poly1.size + poly2.size || poly1.pos.y < poly2.pos.y - poly1.size - poly2.size)
+    return;
+  const vel = new Vector(poly2.pos.x - poly1.pos.x, poly2.pos.y - poly1.pos.y);
+  vel.unit();
+  return vel;
+}
+export function DamageShipCollision(poly1: Polygon, poly2: Polygon) {
+  if (!poly2.checkWithinRect(poly1))
+    return false;
+  var pointsToCheck = 0;
+  if (poly1.isParellelogram)
+    pointsToCheck = poly1.points.length / 2;
+  else
+    pointsToCheck = poly1.points.length;
+  for (var i = 0; i < pointsToCheck; i++) {
+    var zero1 = poly1.pos;
+    var vec1 = poly1.points[i];
+    for (var j = 0; j < poly2.points.length; j++) {
+      var o = j + 1;
+      if (o == poly2.points.length) {
+        o = 0;
+      }
+      var vec2 = new Vector(poly2.points[o].x - poly2.points[j].x, poly2.points[o].y - poly2.points[j].y);
+      var { t, u } = vectorCollision(zero1, vec1, new Vector(poly2.points[j].x + poly2.pos.x, poly2.points[j].y + poly2.pos.y), vec2);
+
+      if (t > -1 && t < 1 && u >= 0 && u < 1) {
+        return vec2;
+      }
+    }
+  }
+  return false;
+}
+
+export function vectorCollision(zero1: Vector, vec1: Vector, zero2: Vector, vec2: Vector) {
   var h = vec1.x * vec2.y - vec1.y * vec2.x;
   var t = (zero2.x - zero1.x) * vec2.y - (zero2.y - zero1.y) * vec2.x;
   t /= h;

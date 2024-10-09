@@ -12,6 +12,7 @@ export class God extends Controllable {
 	controlledPlayer: Player | undefined;
 	controlledShip: PirateShip | undefined;
 	followingShip: boolean;
+	clickPoint: Vector = new Vector(0, 0);
 	constructor(id: string) {
 		super(0, 0);
 		this.id = id;
@@ -24,6 +25,9 @@ export class God extends Controllable {
 	}
 	changePlacePoint(x: number, y: number) {
 		this.placePoint.set(x, y);
+	}
+	changeClickPoint(x: number, y: number) {
+		this.clickPoint.set(x, y);
 	}
 	update() {
 		if (!this.controlledPlayer)

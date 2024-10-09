@@ -1,5 +1,5 @@
 import { getCurrentState } from './state';
-import { blockUpdate, cannonUpdate, godUpdate, grappleUpdate, objectUpdate, playerUpdate, shipUpdate, vectorUpdate } from '../shared/Message';
+import { blockUpdate, cannonUpdate, expolsionUpdate, godUpdate, grappleUpdate, objectUpdate, playerUpdate, shipUpdate, vectorUpdate } from '../shared/Message';
 import { Constants } from '../shared/constants';
 import { getAsset } from './assets';
 export const cameraPosition = { x: 0, y: 0 };
@@ -15,8 +15,13 @@ function setCanvasDimensions() {
 	// 800 in-game units of width.
 	canvas.width = window.innerWidth;
 	canvas.height = window.innerHeight;
+	console.log(canvas.width, canvas.height);
 }
+// Create a temporary canvas for scaling the pattern
+const tempCanvas = document.createElement('canvas');
+const tempContext = tempCanvas.getContext('2d');
 
+// Set the dimensions of the temporary canvas (adjust for desired scale)
 window.addEventListener('resize', setCanvasDimensions);
 function initializeDrawing(meGod: any, mePlayer: any) {
 	if ((!meGod && !mePlayer))
@@ -117,7 +122,7 @@ function drawBackground(camX: number, camY: number) {
 }
 
 function render() {
-	const { meGod, mePlayer, otherGods, otherPlayers, blocks, ships, planets, cannonBalls, explosions, grapples } = getCurrentState();
+	const { meGod, mePlayer, otherGods, otherPlayers, blocks, ships, planets, meteors, cannonBalls, explosions, grapples } = getCurrentState();
 	if (mePlayer)
 		me = mePlayer as playerUpdate;
 	context.lineWidth = 2;
@@ -130,7 +135,8 @@ function render() {
 	drawOtherPlayers(otherPlayers as playerUpdate[]);
 	drawShips(ships as shipUpdate[]);
 	drawCannonBalls(cannonBalls as objectUpdate[]);
-	drawExplosions(explosions as objectUpdate[]);
+	drawMeteors(meteors as objectUpdate[]);
+	drawExplosions(explosions as expolsionUpdate[]);
 	drawGrapples(grapples as grappleUpdate[]);
 	context.restore();
 }
@@ -144,6 +150,22 @@ function drawCannonBalls(cannonBalls: objectUpdate[]) {
 			context.fillStyle = "black";
 			context.beginPath();
 			context.arc(0, 0, 10, 0, 2 * Math.PI);
+			context.closePath();
+			context.fill();
+			context.restore();
+		}
+	});
+}
+function drawMeteors(meteors: objectUpdate[]) {
+	if (!meteors)
+		return;
+	meteors.forEach(meteor => {
+		if (meteor) {
+			context.save();
+			context.translate(meteor.x, meteor.y);
+			context.fillStyle = "orange";
+			context.beginPath();
+			context.arc(0, 0, 20, 0, 2 * Math.PI);
 			context.closePath();
 			context.fill();
 			context.restore();
@@ -166,7 +188,7 @@ function drawGrapples(grapples: grappleUpdate[]) {
 	});
 
 }
-function drawExplosions(explosions: objectUpdate[]) {
+function drawExplosions(explosions: expolsionUpdate[]) {
 	if (!explosions)
 		return;
 	explosions.forEach(explo => {
@@ -174,12 +196,27 @@ function drawExplosions(explosions: objectUpdate[]) {
 			context.save();
 			context.translate(explo.x, explo.y);
 			context.beginPath();
-			context.arc(0, 0, 18, 0, 2 * Math.PI);
+			context.arc(0, 0, explo.size * 1.2, 0, 2 * Math.PI);
 			context.closePath();
 			context.fill();
 			context.restore();
 		}
 	});
+}
+function drawPlayerModel(x: number, y: number) {
+	context.save();
+	context.translate(x, y);
+	context.scale(.05, .05);
+	context.drawImage(getAsset("face.svg"), 53.293, -800);
+	context.drawImage(getAsset("torso.svg"), 150, -150);
+	context.restore();
+	context.save();
+	context.translate(x, y);
+	context.scale(.1, .1);
+	context.drawImage(getAsset("hair1.svg"), 0, 0);
+	context.drawImage(getAsset("hair2.svg"), 0, 0);
+	context.restore();
+
 }
 function drawMe(meGod: godUpdate | undefined, mePlayer: playerUpdate | undefined) {
 	//draw me if me is god
@@ -187,7 +224,7 @@ function drawMe(meGod: godUpdate | undefined, mePlayer: playerUpdate | undefined
 		context.translate(-meGod.x + canvas.width / 2, -meGod.y + canvas.height / 2);
 		cameraPosition.x = -meGod.x + canvas.width / 2;
 		cameraPosition.y = -meGod.y + canvas.height / 2;
-		drawGod(meGod.x, meGod.y);
+		drawPlayerModel(meGod.x, meGod.y);
 	}
 	//draw me if me is player
 	if (mePlayer) {
@@ -283,9 +320,6 @@ export function startRendering() {
 function drawGod(x: number, y: number) {
 	if (!context)
 		return;
-	context.beginPath();
-	context.arc(x, y, 100, 0, 2 * Math.PI);
-	context.fill();
 }
 function drawPolygon(x: number, y: number, points: vectorUpdate[]) {
 	if (!context)
@@ -329,21 +363,44 @@ function drawShip(ship: shipUpdate) {
 	context.fill();
 
 	context.beginPath();
-	for (var i = 0; i < ship.points.length; i++) {
-		if (i == 0) {
-			context.moveTo(ship.points[i].x, ship.points[i].y);
-		}
-		else {
-			context.lineTo(ship.points[i].x, ship.points[i].y);
-		}
-		if (i == ship.points.length - 1) {
-			context.lineTo(ship.points[0].x, ship.points[0].y);
-		}
-	}
+	drawCatmullRomSpline(ship.points, 4);
 	context.closePath();
-	context.stroke();
-	context.fillStyle = 'rgb(140, 75, 25)';
-	context.fill();
+	tempCanvas.width = 500; // Original width of the SVG pattern
+	tempCanvas.height = 100; // Original height of the SVG pattern
+	// Load the SVG image
+	// Scale the image on the temporary canvas
+	if (tempContext) {
+
+		// Draw the scaled image on the temporary canva
+		tempContext.drawImage(getAsset("shipTexture.svg"), 0, 0);
+		// Now create a pattern from the temporary scaled canva
+		const pattern = context.createPattern(tempCanvas, "repeat-y");
+
+		// Save the canvas state before applying transformation
+		context.save();
+
+		// Apply transformations (translate, rotate, etc.)
+		context.rotate(ship.direction);  // Rotate based on ship direction
+		context.translate(-225, -200);   // Move the origin if needed
+		// If the pattern was created successfully, apply it
+		if (pattern) {
+			context.fillStyle = pattern;
+		}
+
+		context.fill();
+		context.stroke();
+		// Restore the canvas state
+		context.restore();
+	}
+
+	context.fillStyle = "red";
+	/*
+	for (var i = 0; i < ship.points.length; i++) {
+		context.beginPath();
+		context.arc(ship.points[i].x, ship.points[i].y, 10, 0, 2 * Math.PI);
+		context.fill();
+	}
+	*/
 	/*
 	context.beginPath();
 	var o = 0;
@@ -377,5 +434,45 @@ function drawShip(ship: shipUpdate) {
 	drawCannon(ship.topPortCannon);
 	drawLoadout(ship, ship.topPortCannon);
 	context.restore();
+	// Helper function to calculate Catmull-Rom interpolation
+
+}
+function catmullRom(p0: vectorUpdate, p1: vectorUpdate, p2: vectorUpdate, p3: vectorUpdate, t: number) {
+	const t2 = t * t;
+	const t3 = t2 * t;
+
+	const f0 = -0.5 * t3 + t2 - 0.5 * t;
+	const f1 = 1.5 * t3 - 2.5 * t2 + 1.0;
+	const f2 = -1.5 * t3 + 2.0 * t2 + 0.5 * t;
+	const f3 = 0.5 * t3 - 0.5 * t2;
+
+	return {
+		x: f0 * p0.x + f1 * p1.x + f2 * p2.x + f3 * p3.x,
+		y: f0 * p0.y + f1 * p1.y + f2 * p2.y + f3 * p3.y
+	};
+}
+
+// Function to draw the Catmull-Rom spline
+function drawCatmullRomSpline(points: vectorUpdate[], segments: number) {
+	context.beginPath();
+	var r = 0;
+	var a = 0;
+	var b = 0;
+	for (let i = 0; i < points.length; i++) {
+		for (let t = 0; t <= 1; t += 1 / segments) {
+			r = i - 1;
+			a = i + 1;
+			b = i + 2;
+			if (a >= points.length)
+				a -= points.length;
+			if (b >= points.length)
+				b -= points.length;
+			if (r < 0)
+				r = points.length - 1;
+			const p = catmullRom(points[r], points[i], points[a], points[b], t);
+			context.lineTo(p.x, p.y);
+		}
+	}
+	context.stroke();
 }
 

@@ -57,11 +57,13 @@ export function getCurrentState() {
 			cannonBalls: interpolateObjectArray(baseUpdate.cannonBalls, next.cannonBalls, ratio),
 			explosions: interpolateObjectArray(baseUpdate.explosions, next.explosions, ratio),
 			grapples: interpolateGrapples(baseUpdate.grapples, next.grapples, ratio),
+			meteors: interpolateObjectArray(baseUpdate.meteors, next.meteors, ratio),
 
 		}
 	}
 }
 function interpolateShips(base: shipUpdate[], next: shipUpdate[], ratio: number) {
+
 	interpolateObjectArray(base, next, ratio);
 	base.forEach((ship) => {
 		interpolateObjectArray(ship.masses, next.find(next => next.id === ship.id)?.masses, ratio);
@@ -85,7 +87,7 @@ function interpolateObject(base: blockUpdate | objectUpdate | undefined, next: b
 	return base;
 }
 function interpolatePoints(base: vectorUpdate[] | undefined, next: vectorUpdate[] | undefined, ratio: number) {
-	if (!base || !next)
+	if (!base || !next || base.length != next.length)
 		return;
 	var b = base as vectorUpdate[];
 	var n = next as vectorUpdate[];

@@ -3,16 +3,18 @@ import { Player } from "./Player";
 import { Block } from "./Block";
 import { PirateShip } from "./PirateShip";
 import { Vector } from "../shared/Vector";
-import { polygonPlanetCollision, polygonPolygonCollision, shipShipCollision, polygonShipCollision, checkHalfPolygonPolygonCollision } from "./collisions";
+import { polygonPlanetCollision, polygonPolygonCollision, shipShipCollision, polygonShipCollision, checkHalfPolygonPolygonCollision, CannonballShipCollision, explosiveCollision, DamageShipCollision } from "./collisions";
 import { CannonBall } from "./CannonBall";
 import { game } from "./users";
 import { Explosion } from "./Explosion";
 import { Grapple } from "./Grapple";
+import { Meteor } from "./Meteor";
 export class CollisionSection {
   players: { [key: string]: Player };
   blocks: { [key: string]: Block };
   ships: { [key: string]: PirateShip };
   planets: { [key: string]: Planet };
+  meteors: { [key: string]: Meteor };
   cannonBalls: { [key: string]: CannonBall };
   grapples: { [key: string]: Grapple };
   explosions: { [key: string]: Explosion };
@@ -20,6 +22,7 @@ export class CollisionSection {
     this.players = {};
     this.blocks = {};
     this.ships = {};
+    this.meteors = {};
     this.planets = {};
     this.cannonBalls = {};
     this.grapples = {};
@@ -30,6 +33,7 @@ export class CollisionSection {
     this.blocks = {};
     this.ships = {};
     this.planets = {};
+    this.meteors = {};
     this.cannonBalls = {};
     this.grapples = {};
     this.explosions = {};
@@ -113,6 +117,17 @@ export class CollisionSection {
       ...downLeft.explosions,
       ...downRight.explosions,
     };
+    const meteors = {
+      ...this.meteors,
+      ...left.meteors,
+      ...right.meteors,
+      ...up.meteors,
+      ...down.meteors,
+      ...upLeft.meteors,
+      ...upRight.meteors,
+      ...downLeft.meteors,
+      ...downRight.meteors,
+    };
     //player block collision
     Object.values(players).forEach((player) => {
       Object.values(blocks).forEach((block) => {
@@ -166,22 +181,45 @@ export class CollisionSection {
           }
         }
       });
-      //planet ship collision
-      Object.values(planets).forEach((planet) => {
-        Object.values(ships).forEach((ship) => {
-          const col = polygonShipCollision(planet, ship, false);
-          if (col) {
-            ship.addDisplacement(col.push.unitMultiplyReturn(-1));
-          }
-        })
+
+    });
+    //planet ship collision
+    Object.values(planets).forEach((planet) => {
+      Object.values(ships).forEach((ship) => {
+        const col = polygonShipCollision(planet, ship, false);
+        if (col) {
+          ship.addDisplacement(col.push.unitMultiplyReturn(-1));
+        }
+      })
+    });
+    //meteor meteor collision
+    const meteorsArray = Object.values(meteors);
+    const middleIndexMet = Math.ceil(meteorsArray.length / 2);
+    const meteors1 = meteorsArray.slice(0, middleIndexMet);
+    const meteors2 = meteorsArray.slice(middleIndexMet);
+    Object.values(meteors).forEach((met1) => {
+      Object.values(meteors).forEach(met2 => {
+        const push = explosiveCollision(met1, met2);
+        if (push && met1.id != met2.id) {
+          const met1Vel = push.unitMultiplyReturn(-.5);
+          const met2Vel = push.unitMultiplyReturn(.5);
+          met1.physicsObject.addCollisionVelocity(met1Vel);
+          met1.physicsObject.setFriction(met1Vel);
+          met2.physicsObject.addCollisionVelocity(met2Vel);
+          met2.physicsObject.setFriction(met2Vel);
+          met1.collisionIDs.push(met2.id);
+          met2.collisionIDs.push(met1.id);
+        }
+
       });
     });
     //cannonBall Ship Collision
     Object.values(cannonBalls).forEach(ball => {
       Object.values(ships).forEach(ship => {
-        const col = checkHalfPolygonPolygonCollision(ball, ship.bodyPoly);
+        const col = DamageShipCollision(ball, ship.bodyPoly);
         if (col) {
           game.deleteCannonBall(ball);
+          ship.addDamage(ball.pos, col);
         }
       });
     });
@@ -191,10 +229,46 @@ export class CollisionSection {
         const col = checkHalfPolygonPolygonCollision(ball, planet);
         if (col) {
           game.deleteCannonBall(ball);
-          delete cannonBalls[ball.id];
         }
       });
     });
+    //cannonBall Meteor Collision
+    Object.values(meteors).forEach(met => {
+      Object.values(cannonBalls).forEach(ball => {
+        const col = checkHalfPolygonPolygonCollision(ball, met);
+        if (col) {
+          game.deleteCannonBall(ball);
+          game.deleteMeteor(met);
+        }
+        else {
+          const col2 = checkHalfPolygonPolygonCollision(met, ball);
+          if (col2) {
+            game.deleteCannonBall(ball);
+            game.deleteMeteor(met);
+          }
+        }
+      });
+    });
+    //meteor Ship Collision
+    Object.values(meteors).forEach(ball => {
+      Object.values(ships).forEach(ship => {
+        const col = DamageShipCollision(ball, ship.bodyPoly);
+        if (col) {
+          game.deleteMeteor(ball);
+          ship.addDamage(ball.pos, col);
+        }
+      });
+    });
+    //meteor Planet Collision
+    Object.values(meteors).forEach(ball => {
+      Object.values(planets).forEach(planet => {
+        const col = checkHalfPolygonPolygonCollision(ball, planet);
+        if (col) {
+          game.deleteMeteor(ball);
+        }
+      });
+    });
+
     //grapple Ship Collision
     Object.values(grapples).forEach(ball => {
       Object.values(ships).forEach(ship => {
@@ -217,13 +291,9 @@ export class CollisionSection {
     //explosion Player Collision
     Object.values(explosions).forEach(explo => {
       Object.values(players).forEach(player => {
-        if (explo.checkWithinRect(player.hitBox)) {
-          const push = player.pos.copy();
-          push.subtract(explo.pos);
-          push.unit();
+        const push = explosiveCollision(explo, player.hitBox);
+        if (push)
           player.addExplosionVelocity(push);
-          explo.playerIDs.push(player.id);
-        }
       });
     });
   }

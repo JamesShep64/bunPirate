@@ -7,6 +7,10 @@ import { Block } from "./Block";
 import { Player } from "./Player";
 import { PirateShip } from "./PirateShip";
 import { Planet } from "./Planet";
+import { Meteor } from "./Meteor";
+import { Explosion } from "./Explosion";
+import { CannonBall } from "./CannonBall";
+import { Vector } from "../shared/Vector";
 export function addGod(id: string) {
   game.users.push(id);
   game.gods[id] = (new God(id));
@@ -23,6 +27,8 @@ export function handleMouseMove(action: Action) {
 }
 export function handleMouseClick(action: Action) {
   const god = game.gods[action.id];
+  const val = action.value as mouseEvent;
+  god.changeClickPoint(val.x, val.y);
   const first = godTakeControl(god, god.controlledPlayer, game.players, "Player");
   if (first)
     return;
@@ -107,6 +113,11 @@ export function godAddBlock(id: string) {
   const blockID = generateUniqueId({ length: 8 });
   game.blocks[blockID] = new Block(blockID, game.gods[id].placePoint.x, game.gods[id].placePoint.y, 50, 50);
 }
+export function godAddExplosion(id: string) {
+  var idE = generateUniqueId({ length: 8 });
+  const god = game.gods[id];
+  game.addCannonBall(new CannonBall(idE, god.placePoint.x, god.placePoint.y, new Vector(0, 0)));
+}
 export function godAddPlayer(id: string) {
   const playerID = generateUniqueId({ length: 8 });
   game.players[playerID] = new Player(playerID, game.gods[id].placePoint.x, game.gods[id].placePoint.y);
@@ -114,7 +125,17 @@ export function godAddPlayer(id: string) {
 export function godAddPlanet(id: string) {
   const planetID = generateUniqueId({ length: 8 });
   game.planets[planetID] = new Planet(planetID, game.gods[id].placePoint.x, game.gods[id].placePoint.y);
-
+}
+export function godAddMeteor(id: string) {
+  const god = game.gods[id];
+  if (god.placePoint.x == god.clickPoint.x)
+    god.clickPoint.addX(5);
+  const meteorID = generateUniqueId({ length: 8 });
+  var velocity = game.gods[id].clickPoint.subtractReturn(game.gods[id].placePoint);
+  const v = velocity.unitReturn();
+  v.unitMultiply(.5);
+  const met = new Meteor(meteorID, game.gods[id].placePoint.x, game.gods[id].placePoint.y, v);
+  game.addMeteor(met);
 }
 export function godTogglePlayerGravity(id: string) {
   if (game.gods[id].controlledPlayer)

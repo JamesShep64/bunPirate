@@ -8,13 +8,13 @@ export class Explosion {
   size: number = 15;
   id: string;
   count: number = 20;
-  playerIDs: string[];
+  collisionIDs: string[];
   constructor(x: number, y: number, id: string, size?: number) {
     this.id = id;
     if (size)
       this.size = size;
     this.pos = new Vector(x, y);
-    this.playerIDs = [];
+    this.collisionIDs = [];
   }
   update() {
     putInGrid(this.pos, this);
@@ -27,7 +27,7 @@ export class Explosion {
   checkWithinRect(other: Polygon) {
     if (this.pos.x > other.pos.x + this.size + other.size || this.pos.x < other.pos.x - this.size - other.size || this.pos.y > other.pos.y + this.size + other.size || this.pos.y < other.pos.y - this.size - other.size)
       return false;
-    if (this.playerIDs.indexOf(other.id) != -1)
+    if (this.collisionIDs.indexOf(other.id) != -1)
       return false;
     return true;
   }
@@ -36,6 +36,7 @@ export class Explosion {
       id: this.id,
       x: this.pos.x,
       y: this.pos.y,
+      size: this.size,
     }
   }
 }

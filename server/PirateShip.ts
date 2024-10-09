@@ -6,7 +6,7 @@ import { Mass } from "./Mass";
 import { PhysicsObject } from "./PhysicsObject";
 import { Player } from "./Player";
 import { Polygon } from "./polygon";
-import { checkHalfPolygonPolygonCollision, putInGrid } from "./collisions";
+import { checkHalfPolygonPolygonCollision, putInGrid, vectorCollision } from "./collisions";
 import { Queue } from "./Queue";
 import { Cannon } from "./Cannon";
 import { Grapple } from "./Grapple";
@@ -19,6 +19,7 @@ export class PirateShip {
   forward: Vector;
   bodyPoly: Polygon;
   collisionZerosPolygon: Polygon;
+  damagePoly: Polygon;
   id: string;
   missingZeros: number[];
   floors: number[];
@@ -58,6 +59,8 @@ export class PirateShip {
     this.physicsObject = new PhysicsObject();
     this.physicsObject.gravityOn = false;
     this.bodyPoly = new Polygon(x, y, [new Vector(-220, -30), new Vector(-35, -30), new Vector(-35, 0), new Vector(-125, 0), new Vector(-125, 65), new Vector(125, 65), new Vector(125, 0), new Vector(35, 0), new Vector(35, -30), new Vector(220, -30), new Vector(220, 0), new Vector(140, 100), new Vector(-140, 100), new Vector(-220, 0)], false, 220, id);
+
+    this.damagePoly = new Polygon(x, y, [new Vector(-220, -25), new Vector(-180, -30), new Vector(-140, -30), new Vector(-100, -30), new Vector(-60, -30), new Vector(-35, -25), new Vector(-35, 0), new Vector(-125, 0), new Vector(-125, 60), new Vector(-100, 65), new Vector(-60, 65), new Vector(-20, 65), new Vector(20, 65), new Vector(60, 65), new Vector(90, 65), new Vector(125, 60), new Vector(125, 0), new Vector(35, 0), new Vector(35, -25), new Vector(60, -30), new Vector(100, -30), new Vector(140, -30), new Vector(180, -30), new Vector(220, -25), new Vector(220, 0), new Vector(204, 20), new Vector(188, 40), new Vector(172, 60), new Vector(156, 80), new Vector(140, 100), new Vector(100, 100), new Vector(60, 100), new Vector(20, 100), new Vector(-20, 100), new Vector(-60, 100), new Vector(-100, 100), new Vector(-140, 100), new Vector(-164, 70), new Vector(-188, 40), new Vector(-220, 0)], false, 220, id);
     this.collisionZerosPolygon = new Polygon(0, 0, [new Vector(-210, -20), new Vector(-45, -20), new Vector(-45, -10), new Vector(45, -10), new Vector(45, -20), new Vector(210, -20), new Vector(210, -10), new Vector(130, 90), new Vector(-130, 90), new Vector(-210, -10)], false, 220);
     this.ladder = new Polygon(0, 0, [new Vector(-10, -30), new Vector(10, -30), new Vector(10, 50), new Vector(-10, 50)], true, 90);
     this.spawnPoint = new Polygon(0, 0, [new Vector(100, -50)], false, 0);
@@ -65,6 +68,7 @@ export class PirateShip {
     this.collisionZerosPolygon.pos = this.pos;
     this.ladder.pos = this.pos;
     this.bodyPoly.pos = this.pos;
+    this.damagePoly.pos = this.pos;
     this.physicsObject.pos = this.pos;
     this.spawnPoint.pos = this.pos;
     this.missingZeros = [3, 4, 5, 6];
@@ -146,6 +150,7 @@ export class PirateShip {
     this.ladder.rotate(angle, cos, sin);
     this.topPortCannon.doRotate(angle, cos, sin);
     this.spawnPoint.rotate(angle, cos, sin);
+    this.damagePoly.rotate(angle, cos, sin);
     this.masses.forEach(mass => { if (mass) mass.poly.rotate(angle) });
     if (withPolys) {
       Object.values(this.players).forEach((player) => {
@@ -203,6 +208,50 @@ export class PirateShip {
   clearMass() {
     this.masses = [];
   }
+  addDamage(collisionPoint: Vector, collidedVec: Vector) {
+    collisionPoint.subtract(this.pos);
+    const perp = new Vector(0, 0);
+    perp.set(-collidedVec.y, collidedVec.x);
+    perp.unit();
+    var minT = 10000;
+    var intersection: { u: number, t: number };
+    var intersectedVector: Vector | undefined;
+    var index = 0;
+    var intersectU = 0;
+    var o = 0;
+    for (var i = 0; i < this.damagePoly.points.length; i++) {
+      o++;
+      if (o == this.damagePoly.points.length) {
+        o = 0;
+      }
+      var vec2 = new Vector(this.damagePoly.points[o].x - this.damagePoly.points[i].x, this.damagePoly.points[o].y - this.damagePoly.points[i].y);
+      intersection = vectorCollision(collisionPoint, perp, this.damagePoly.points[i], vec2);
+      if (intersection.u >= 0 && intersection.u <= 1 && Math.abs(intersection.t) < minT) {
+        index = i;
+        intersectU = intersection.u;
+        minT = Math.abs(intersection.t);
+        intersectedVector = vec2;
+      }
+    }
+    if (intersectedVector) {
+      const newPoint = new Vector(this.damagePoly.points[index].x + intersectedVector.x * intersectU, this.damagePoly.points[index].y + intersectedVector.y * intersectU);
+      perp.unitMultiply(6);
+      var o = index + 1;
+      if (o == this.damagePoly.points.length)
+        o = 0;
+      if (index < this.damagePoly.points.length && this.damagePoly.points[o].distance(newPoint) < 8) {
+        this.damagePoly.points[o].add(perp);
+      }
+      else if (this.damagePoly.points[index].distance(newPoint) < 8) {
+        this.damagePoly.points[index].add(perp);
+      }
+      else {
+        newPoint.add(perp);
+        this.damagePoly.points.splice(index + 1, 0, newPoint);
+      }
+    }
+
+  }
   checkPlayersWithin() {
     Object.values(this.players).forEach((player) => {
       if (!this.bodyPoly.checkWithinRect(player.hitBox)) {
@@ -217,7 +266,7 @@ export class PirateShip {
       id: this.id,
       x: this.pos.x,
       y: this.pos.y,
-      points: this.bodyPoly.points.map(point => point.serializeForUpdates()),
+      points: this.damagePoly.points.map(point => point.serializeForUpdates()),
       zeroPoints: this.collisionZerosPolygon.points.map(point => point.serializeForUpdates()),
       missingZeros: this.missingZeros,
       masses: this.masses.map(mass => mass.serializeForUpdates()),

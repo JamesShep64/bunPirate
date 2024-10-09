@@ -26,8 +26,9 @@ export class Vector {
 		this.y = other.y;
 	}
 	unit() {
-		this.x = this.x / Math.sqrt(this.x * this.x + this.y * this.y);
-		this.y = this.y / Math.sqrt(this.x * this.x + this.y * this.y);
+		var mag = Math.sqrt(this.x * this.x + this.y * this.y);
+		this.x = this.x / mag;
+		this.y = this.y / mag;
 	}
 	unitReturn() {
 		return new Vector(this.x / Math.sqrt(this.x * this.x + this.y * this.y), this.y / Math.sqrt(this.x * this.x + this.y * this.y));
@@ -63,6 +64,9 @@ export class Vector {
 	addY(num: number) {
 		this.y += num;
 	}
+	distance(vec: Vector) {
+		return Math.sqrt(Math.pow(this.x - vec.x, 2) + Math.pow(vec.y - this.y, 2));
+	}
 	copy() {
 		return new Vector(this.x, this.y);
 	}
@@ -71,6 +75,9 @@ export class Vector {
 	}
 	magnatude() {
 		return Math.sqrt(this.x * this.x + this.y * this.y);
+	}
+	equals(vec: Vector) {
+		return vec.x == this.x && vec.y == this.y;
 	}
 	serializeForUpdates() {
 		return { x: this.x, y: this.y };

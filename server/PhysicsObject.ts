@@ -71,6 +71,10 @@ export class PhysicsObject {
     var id = generateUniqueId({ length: 4 });
     this.physicsVelocities[id] = new PhysicsVelocity(id, 30, vec.unitMultiplyReturn(2), .98);
   }
+  addCollisionVelocity(vec: Vector) {
+    var id = generateUniqueId({ length: 4 });
+    this.physicsVelocities[id] = new PhysicsVelocity(id, 15, vec.unitMultiplyReturn(2.5), .85);
+  }
   subtractVelocity(vec: Vector) {
     this.currentVelocity.subtract(vec);
   }
