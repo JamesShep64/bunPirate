@@ -163,6 +163,10 @@ export class Player extends Controllable {
       points: this.hitBox.points.map(point => point.serializeForUpdates()),
       onCannon: this.onCannon,
       direction: this.hitBox.direction,
+      movingUp: this.movingUp,
+      movingDown: this.movingDown,
+      movingLeft: this.movingLeft,
+      movingRight: this.movingRight,
     }
   }
 

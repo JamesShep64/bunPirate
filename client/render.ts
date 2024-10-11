@@ -203,18 +203,52 @@ function drawExplosions(explosions: expolsionUpdate[]) {
 		}
 	});
 }
-function drawPlayerModel(x: number, y: number) {
+function drawRotatedPart(x: number, y: number, angle: number, name: string) {
 	context.save();
 	context.translate(x, y);
-	context.scale(.05, .05);
-	context.drawImage(getAsset("face.svg"), 53.293, -800);
-	context.drawImage(getAsset("torso.svg"), 150, -150);
+	context.rotate(angle);
+	context.translate(-x, -y);
+	context.drawImage(getAsset(name), 0, 0, 30, 50);
 	context.restore();
+}
+function drawPlayerModel(player: playerUpdate) {
+	var hair1Angle = 0;
+	var hair2Angle = 0;
+	var hatAngle = 0;
+	var leftLegAngle = 0;
+	var rightLegAngle = 0;
+	var leftShirtAngle = 0;
+	var rightShirtAngle = 0;
+	var leftArmAngle = 0;
+	var rightArmAngle = 0;
+	var bibAngle = 0;
+	if (player.movingRight ) {
+		leftLegAngle = .5 * Math.sin(.01 * Date.now() + Math.PI);
+		rightLegAngle = -.5 * Math.sin(.015 * Date.now());
+	}
+	if (player.movingLeft) {
+		leftLegAngle = -.5 * Math.sin(.015 * Date.now());
+		rightLegAngle = .5 * Math.sin(.01 * Date.now() + Math.PI);
+	}
+	if (player.movingDown) {
+	}
+	if (player.movingUp) {
+	}
 	context.save();
-	context.translate(x, y);
-	context.scale(.1, .1);
-	context.drawImage(getAsset("hair1.svg"), 0, 0);
-	context.drawImage(getAsset("hair2.svg"), 0, 0);
+	context.translate(player.x - 15, player.y - 32);
+	context.drawImage(getAsset("face.svg"), 0, 0, 30, 50);
+	context.drawImage(getAsset("torso.svg"), 0, 0, 30, 50);
+	drawRotatedPart(6.41, 9.053, hair2Angle, "hair1.svg");
+	drawRotatedPart(20.985, 9.356, hair2Angle, "hair2.svg");
+	drawRotatedPart(14.845, 0, hatAngle, "hat.svg");
+	drawRotatedPart(11.47, 39.30, leftLegAngle, "leftLeg.svg");
+	drawRotatedPart(16.19, 39.30, rightLegAngle, "rightLeg.svg");
+	drawRotatedPart(13.50, 28.72, leftShirtAngle, "leftShirt.svg");
+	drawRotatedPart(15.52, 27.96, rightShirtAngle, "rightShirt.svg");
+	drawRotatedPart(14.17, 26.45, bibAngle, "bib.svg");
+	drawRotatedPart(10.12, 28.72, leftArmAngle, "leftArm.svg");
+	drawRotatedPart(18.22, 27.96, rightArmAngle, "rightArm.svg");
+
 	context.restore();
 
 }
@@ -224,7 +258,6 @@ function drawMe(meGod: godUpdate | undefined, mePlayer: playerUpdate | undefined
 		context.translate(-meGod.x + canvas.width / 2, -meGod.y + canvas.height / 2);
 		cameraPosition.x = -meGod.x + canvas.width / 2;
 		cameraPosition.y = -meGod.y + canvas.height / 2;
-		drawPlayerModel(meGod.x, meGod.y);
 	}
 	//draw me if me is player
 	if (mePlayer) {
@@ -232,7 +265,7 @@ function drawMe(meGod: godUpdate | undefined, mePlayer: playerUpdate | undefined
 		context.translate(-me.x + canvas.width / 2, -me.y + canvas.height / 2);
 		cameraPosition.x = -me.x + canvas.width / 2;
 		cameraPosition.y = -me.y + canvas.height / 2;
-		drawPolygon(me.x, me.y, me.points);
+		drawPlayerModel(me);
 		context.save();
 		context.fillStyle = "rgb(" + me.colorR + "," + me.colorG + "," + me.colorB + ")";
 		context.fill();
@@ -297,7 +330,7 @@ function drawOtherPlayers(otherPlayers: playerUpdate[]) {
 	otherPlayers.forEach(player => {
 		if (!player)
 			return;
-		drawPolygon(player.x, player.y, player.points);
+		drawPlayerModel(player);
 		context.save();
 		context.fillStyle = "rgb(" + player.colorR + "," + player.colorG + "," + player.colorB + ")";
 		context.fill();

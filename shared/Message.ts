@@ -115,6 +115,11 @@ export interface playerUpdate extends objectUpdate {
 	colorG: number;
 	colorB: number;
 	onCannon: boolean;
+	onLadder: boolean;
+	movingUp: boolean;
+	movingDown: boolean;
+	movingLeft: boolean;
+	movingRight: boolean;
 }
 export interface godCommand {
 	text: string;

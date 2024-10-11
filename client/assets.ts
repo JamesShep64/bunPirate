@@ -6,6 +6,7 @@ const ASSET_NAMES = [
   'face.svg',
   'hair1.svg',
   'hair2.svg',
+  'bib.svg',
   'hat.svg',
   'leftArm.svg',
   'leftLeg.svg',
@@ -14,6 +15,7 @@ const ASSET_NAMES = [
   'rightLeg.svg',
   'rightShirt.svg',
   'torso.svg',
+  'wholePlayer.svg',
 ];
 //dictionary of the images
 export const assets: { [key: string]: CanvasImageSource } = {};
@@ -28,6 +30,7 @@ function downloadAsset(assetName: string) {
     const asset = new Image();
     assets[assetName] = asset;
     asset.src = `./assets/${assetName}`;
+    console.log("downloaded", assetName);
     resolve("");
   });
 }
