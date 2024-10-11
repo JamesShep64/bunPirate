@@ -101,6 +101,7 @@ export interface cannonUpdate {
 	points: vectorUpdate[];
 	power: number;
 	munitionIndex: number;
+	playerID : string;
 }
 export interface grappleUpdate extends objectUpdate {
 	launchOrigin: vectorUpdate;

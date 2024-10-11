@@ -254,6 +254,150 @@ var gameUpdates = [];
 var gameStart = 0;
 var firstServerTimestamp = 0;
 
+// ../client/animationHandling.ts
+function animatePlayers(mePlayer, otherPlayers) {
+  const othersAnimated = [];
+  var meAnimated = undefined;
+  if (mePlayer) {
+    const found = Object.keys(players).indexOf(mePlayer.id);
+    if (found == -1) {
+      players[mePlayer.id] = new PlayerAnimation(mePlayer);
+    }
+    players[mePlayer.id].update(mePlayer);
+    meAnimated = players[mePlayer.id];
+  }
+  if (otherPlayers) {
+    otherPlayers.forEach((player) => {
+      if (player) {
+        if (Object.keys(players).indexOf(player.id) == -1)
+          players[player.id] = new PlayerAnimation(player);
+        players[player.id].update(player);
+        if (player.id != mePlayer?.id) {
+          othersAnimated.push(players[player.id]);
+        }
+      }
+    });
+  }
+  return { meAnimated, othersAnimated };
+}
+var players = {};
+
+class PlayerAnimation {
+  player;
+  hair1Angle;
+  hair2Angle;
+  hatAngle;
+  leftLegAngle;
+  rightLegAngle;
+  leftShirtAngle;
+  rightShirtAngle;
+  leftArmAngle;
+  rightArmAngle;
+  bibAngle;
+  constructor(playerUpdate) {
+    this.player = playerUpdate;
+    this.hair1Angle = new animationTicker(-0.3, 0.3);
+    this.hair2Angle = new animationTicker(-0.3, 0.3);
+    this.hatAngle = new animationTicker(-0.1, 0.1);
+    this.leftLegAngle = new animationTicker(-0.5, 0.5);
+    this.rightLegAngle = new animationTicker(-0.5, 0.5);
+    this.leftShirtAngle = new animationTicker(-0.2, 0.2);
+    this.rightShirtAngle = new animationTicker(-0.2, 0.2);
+    this.leftArmAngle = new animationTicker(-0.5, 0.5);
+    this.rightArmAngle = new animationTicker(-0.5, 0.5);
+    this.bibAngle = new animationTicker(-0.1, 0.1);
+  }
+  walkRight() {
+    this.leftLegAngle.tick = 0.03;
+    this.leftLegAngle.bounceOnMax = true;
+    this.leftLegAngle.bounceOnMin = true;
+    this.rightLegAngle.tick = -0.05;
+    this.rightLegAngle.bounceOnMax = true;
+    this.rightLegAngle.bounceOnMin = true;
+    this.leftLegAngle.rest = false;
+    this.rightLegAngle.rest = false;
+  }
+  walkLeft() {
+    this.leftLegAngle.tick = -0.05;
+    this.leftLegAngle.bounceOnMax = true;
+    this.leftLegAngle.bounceOnMin = true;
+    this.rightLegAngle.tick = 0.03;
+    this.rightLegAngle.bounceOnMax = true;
+    this.rightLegAngle.bounceOnMin = true;
+    this.leftLegAngle.rest = false;
+    this.rightLegAngle.rest = false;
+  }
+  stopWalking() {
+    this.leftLegAngle.rest = true;
+    this.rightLegAngle.rest = true;
+  }
+  update(player) {
+    this.player = player;
+    if (player.movingRight) {
+      this.walkRight();
+    } else if (player.movingLeft) {
+      this.walkLeft();
+    } else {
+      this.stopWalking();
+    }
+    this.hair1Angle.update();
+    this.hair2Angle.update();
+    this.hatAngle.update();
+    this.leftLegAngle.update();
+    this.rightLegAngle.update();
+    this.leftShirtAngle.update();
+    this.rightShirtAngle.update();
+    this.leftArmAngle.update();
+    this.rightArmAngle.update();
+    this.bibAngle.update();
+  }
+}
+
+class animationTicker {
+  max;
+  min;
+  current = 0;
+  tick = 0;
+  rest = false;
+  bounceOnMin = false;
+  bounceOnMax = false;
+  goToNuetral = false;
+  hitMin = false;
+  hitMax = false;
+  constructor(min, max) {
+    this.min = min;
+    this.max = max;
+  }
+  update() {
+    if (this.hitMin && this.tick < 0)
+      this.tick *= -1;
+    if (this.hitMax && this.tick > 0) {
+      this.tick *= -1;
+    }
+    const lessThanBefore = this.current < 0;
+    this.current += this.tick;
+    const greaterOrEqualAfter = this.current >= 0;
+    if (lessThanBefore == greaterOrEqualAfter && this.rest) {
+      this.current = 0;
+    }
+    if (this.current <= this.min) {
+      if (this.bounceOnMin) {
+        this.hitMin = true;
+        this.hitMax = false;
+      }
+      this.current = this.min;
+    }
+    if (this.current >= this.max) {
+      if (this.bounceOnMax) {
+        this.hitMax = true;
+        this.hitMin = false;
+        console.log("MAX", this.tick);
+      }
+      this.current = this.max;
+    }
+  }
+}
+
 // ../client/render.ts
 function setCanvasDimensions() {
   canvas.width = window.innerWidth;
@@ -338,14 +482,15 @@ function render() {
   const { meGod, mePlayer, otherGods, otherPlayers, blocks, ships, planets, meteors, cannonBalls, explosions, grapples } = getCurrentState();
   if (mePlayer)
     me = mePlayer;
+  const { meAnimated, othersAnimated } = animatePlayers(mePlayer, otherPlayers);
   context.lineWidth = 2;
   context.fillStyle = "blue";
   initializeDrawing(meGod, mePlayer);
-  drawMe(meGod, mePlayer);
+  drawMe(meGod, meAnimated);
   drawOtherGods(otherGods);
   drawBlocks(blocks);
   drawBlocks(planets);
-  drawOtherPlayers(otherPlayers);
+  drawOtherPlayers(othersAnimated);
   drawShips(ships);
   drawCannonBalls(cannonBalls);
   drawMeteors(meteors);
@@ -424,42 +569,22 @@ function drawRotatedPart(x, y, angle, name) {
   context.restore();
 }
 function drawPlayerModel(player) {
-  var hair1Angle = 0;
-  var hair2Angle = 0;
-  var hatAngle = 0;
-  var leftLegAngle = 0;
-  var rightLegAngle = 0;
-  var leftShirtAngle = 0;
-  var rightShirtAngle = 0;
-  var leftArmAngle = 0;
-  var rightArmAngle = 0;
-  var bibAngle = 0;
-  if (player.movingRight) {
-    leftLegAngle = 0.5 * Math.sin(0.01 * Date.now() + Math.PI);
-    rightLegAngle = -0.5 * Math.sin(0.015 * Date.now());
-  }
-  if (player.movingLeft) {
-    leftLegAngle = -0.5 * Math.sin(0.015 * Date.now());
-    rightLegAngle = 0.5 * Math.sin(0.01 * Date.now() + Math.PI);
-  }
-  if (player.movingDown) {
-  }
-  if (player.movingUp) {
-  }
   context.save();
-  context.translate(player.x - 15, player.y - 32);
+  context.translate(player.player.x, player.player.y);
+  context.rotate(player.player.direction);
+  context.translate(-15, -32);
   context.drawImage(getAsset("face.svg"), 0, 0, 30, 50);
   context.drawImage(getAsset("torso.svg"), 0, 0, 30, 50);
-  drawRotatedPart(6.41, 9.053, hair2Angle, "hair1.svg");
-  drawRotatedPart(20.985, 9.356, hair2Angle, "hair2.svg");
-  drawRotatedPart(14.845, 0, hatAngle, "hat.svg");
-  drawRotatedPart(11.47, 39.3, leftLegAngle, "leftLeg.svg");
-  drawRotatedPart(16.19, 39.3, rightLegAngle, "rightLeg.svg");
-  drawRotatedPart(13.5, 28.72, leftShirtAngle, "leftShirt.svg");
-  drawRotatedPart(15.52, 27.96, rightShirtAngle, "rightShirt.svg");
-  drawRotatedPart(14.17, 26.45, bibAngle, "bib.svg");
-  drawRotatedPart(10.12, 28.72, leftArmAngle, "leftArm.svg");
-  drawRotatedPart(18.22, 27.96, rightArmAngle, "rightArm.svg");
+  drawRotatedPart(6.41, 9.053, player.hair2Angle.current, "hair1.svg");
+  drawRotatedPart(20.985, 9.356, player.hair2Angle.current, "hair2.svg");
+  drawRotatedPart(14.845, 0, player.hatAngle.current, "hat.svg");
+  drawRotatedPart(11.47, 39.3, player.leftLegAngle.current, "leftLeg.svg");
+  drawRotatedPart(16.19, 39.3, player.rightLegAngle.current, "rightLeg.svg");
+  drawRotatedPart(13.5, 28.72, player.leftShirtAngle.current, "leftShirt.svg");
+  drawRotatedPart(15.52, 27.96, player.rightShirtAngle.current, "rightShirt.svg");
+  drawRotatedPart(14.17, 26.45, player.bibAngle.current, "bib.svg");
+  drawRotatedPart(10.12, 28.72, player.leftArmAngle.current, "leftArm.svg");
+  drawRotatedPart(18.22, 27.96, player.rightArmAngle.current, "rightArm.svg");
   context.restore();
 }
 function drawMe(meGod, mePlayer) {
@@ -469,19 +594,17 @@ function drawMe(meGod, mePlayer) {
     cameraPosition.y = -meGod.y + canvas.height / 2;
   }
   if (mePlayer) {
-    const me = mePlayer;
-    context.translate(-me.x + canvas.width / 2, -me.y + canvas.height / 2);
-    cameraPosition.x = -me.x + canvas.width / 2;
-    cameraPosition.y = -me.y + canvas.height / 2;
-    drawPlayerModel(me);
-    context.save();
-    context.fillStyle = "rgb(" + me.colorR + "," + me.colorG + "," + me.colorB + ")";
+    context.translate(-mePlayer.player.x + canvas.width / 2, -mePlayer.player.y + canvas.height / 2);
+    cameraPosition.x = -mePlayer.player.x + canvas.width / 2;
+    cameraPosition.y = -mePlayer.player.y + canvas.height / 2;
+    drawPlayerModel(mePlayer);
     context.fill();
-    context.restore();
   }
 }
 function drawLoadout(ship, cannon) {
-  if (!me?.onCannon)
+  if (me && cannon)
+    console.log(me.id, cannon.playerID);
+  if (!me?.onCannon || me.id != cannon.playerID)
     return;
   context.save();
   context.translate(cannon.x, cannon.y);
@@ -537,10 +660,6 @@ function drawOtherPlayers(otherPlayers) {
     if (!player)
       return;
     drawPlayerModel(player);
-    context.save();
-    context.fillStyle = "rgb(" + player.colorR + "," + player.colorG + "," + player.colorB + ")";
-    context.fill();
-    context.restore();
   });
 }
 function drawShips(ships) {

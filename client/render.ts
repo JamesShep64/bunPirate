@@ -1,5 +1,6 @@
 import { getCurrentState } from './state';
 import { blockUpdate, cannonUpdate, expolsionUpdate, godUpdate, grappleUpdate, objectUpdate, playerUpdate, shipUpdate, vectorUpdate } from '../shared/Message';
+import { animatePlayers, PlayerAnimation } from './animationHandling';
 import { Constants } from '../shared/constants';
 import { getAsset } from './assets';
 export const cameraPosition = { x: 0, y: 0 };
@@ -125,14 +126,15 @@ function render() {
 	const { meGod, mePlayer, otherGods, otherPlayers, blocks, ships, planets, meteors, cannonBalls, explosions, grapples } = getCurrentState();
 	if (mePlayer)
 		me = mePlayer as playerUpdate;
+	const { meAnimated, othersAnimated } = animatePlayers(mePlayer as playerUpdate, otherPlayers as playerUpdate[]);
 	context.lineWidth = 2;
 	context.fillStyle = "blue";
 	initializeDrawing(meGod, mePlayer);
-	drawMe(meGod as godUpdate, mePlayer as playerUpdate);
+	drawMe(meGod as godUpdate, meAnimated);
 	drawOtherGods(otherGods as godUpdate[]);
 	drawBlocks(blocks as blockUpdate[]);
 	drawBlocks(planets as blockUpdate[]);
-	drawOtherPlayers(otherPlayers as playerUpdate[]);
+	drawOtherPlayers(othersAnimated);
 	drawShips(ships as shipUpdate[]);
 	drawCannonBalls(cannonBalls as objectUpdate[]);
 	drawMeteors(meteors as objectUpdate[]);
@@ -211,48 +213,28 @@ function drawRotatedPart(x: number, y: number, angle: number, name: string) {
 	context.drawImage(getAsset(name), 0, 0, 30, 50);
 	context.restore();
 }
-function drawPlayerModel(player: playerUpdate) {
-	var hair1Angle = 0;
-	var hair2Angle = 0;
-	var hatAngle = 0;
-	var leftLegAngle = 0;
-	var rightLegAngle = 0;
-	var leftShirtAngle = 0;
-	var rightShirtAngle = 0;
-	var leftArmAngle = 0;
-	var rightArmAngle = 0;
-	var bibAngle = 0;
-	if (player.movingRight ) {
-		leftLegAngle = .5 * Math.sin(.01 * Date.now() + Math.PI);
-		rightLegAngle = -.5 * Math.sin(.015 * Date.now());
-	}
-	if (player.movingLeft) {
-		leftLegAngle = -.5 * Math.sin(.015 * Date.now());
-		rightLegAngle = .5 * Math.sin(.01 * Date.now() + Math.PI);
-	}
-	if (player.movingDown) {
-	}
-	if (player.movingUp) {
-	}
+function drawPlayerModel(player: PlayerAnimation) {
 	context.save();
-	context.translate(player.x - 15, player.y - 32);
+	context.translate(player.player.x, player.player.y);
+	context.rotate(player.player.direction);
+	context.translate(- 15, - 32);
 	context.drawImage(getAsset("face.svg"), 0, 0, 30, 50);
 	context.drawImage(getAsset("torso.svg"), 0, 0, 30, 50);
-	drawRotatedPart(6.41, 9.053, hair2Angle, "hair1.svg");
-	drawRotatedPart(20.985, 9.356, hair2Angle, "hair2.svg");
-	drawRotatedPart(14.845, 0, hatAngle, "hat.svg");
-	drawRotatedPart(11.47, 39.30, leftLegAngle, "leftLeg.svg");
-	drawRotatedPart(16.19, 39.30, rightLegAngle, "rightLeg.svg");
-	drawRotatedPart(13.50, 28.72, leftShirtAngle, "leftShirt.svg");
-	drawRotatedPart(15.52, 27.96, rightShirtAngle, "rightShirt.svg");
-	drawRotatedPart(14.17, 26.45, bibAngle, "bib.svg");
-	drawRotatedPart(10.12, 28.72, leftArmAngle, "leftArm.svg");
-	drawRotatedPart(18.22, 27.96, rightArmAngle, "rightArm.svg");
+	drawRotatedPart(6.41, 9.053, player.hair2Angle.current, "hair1.svg");
+	drawRotatedPart(20.985, 9.356, player.hair2Angle.current, "hair2.svg");
+	drawRotatedPart(14.845, 0, player.hatAngle.current, "hat.svg");
+	drawRotatedPart(11.47, 39.30, player.leftLegAngle.current, "leftLeg.svg");
+	drawRotatedPart(16.19, 39.30, player.rightLegAngle.current, "rightLeg.svg");
+	drawRotatedPart(13.50, 28.72, player.leftShirtAngle.current, "leftShirt.svg");
+	drawRotatedPart(15.52, 27.96, player.rightShirtAngle.current, "rightShirt.svg");
+	drawRotatedPart(14.17, 26.45, player.bibAngle.current, "bib.svg");
+	drawRotatedPart(10.12, 28.72, player.leftArmAngle.current, "leftArm.svg");
+	drawRotatedPart(18.22, 27.96, player.rightArmAngle.current, "rightArm.svg");
 
 	context.restore();
 
 }
-function drawMe(meGod: godUpdate | undefined, mePlayer: playerUpdate | undefined) {
+function drawMe(meGod: godUpdate | undefined, mePlayer: PlayerAnimation | undefined) {
 	//draw me if me is god
 	if (meGod && !mePlayer) {
 		context.translate(-meGod.x + canvas.width / 2, -meGod.y + canvas.height / 2);
@@ -261,19 +243,15 @@ function drawMe(meGod: godUpdate | undefined, mePlayer: playerUpdate | undefined
 	}
 	//draw me if me is player
 	if (mePlayer) {
-		const me = mePlayer as playerUpdate;
-		context.translate(-me.x + canvas.width / 2, -me.y + canvas.height / 2);
-		cameraPosition.x = -me.x + canvas.width / 2;
-		cameraPosition.y = -me.y + canvas.height / 2;
-		drawPlayerModel(me);
-		context.save();
-		context.fillStyle = "rgb(" + me.colorR + "," + me.colorG + "," + me.colorB + ")";
+		context.translate(-mePlayer.player.x + canvas.width / 2, -mePlayer.player.y + canvas.height / 2);
+		cameraPosition.x = -mePlayer.player.x + canvas.width / 2;
+		cameraPosition.y = -mePlayer.player.y + canvas.height / 2;
+		drawPlayerModel(mePlayer);
 		context.fill();
-		context.restore();
 	}
 }
 function drawLoadout(ship: shipUpdate, cannon: cannonUpdate) {
-	if (!me?.onCannon)
+	if (!me?.onCannon || me.id != cannon.playerID)
 		return;
 	context.save();
 	context.translate(cannon.x, cannon.y);
@@ -324,17 +302,13 @@ function drawBlocks(blocks: blockUpdate[]) {
 		drawPolygon(block.x, block.y, block.points);
 	});
 }
-function drawOtherPlayers(otherPlayers: playerUpdate[]) {
+function drawOtherPlayers(otherPlayers: PlayerAnimation[] | undefined) {
 	if (!otherPlayers)
 		return;
 	otherPlayers.forEach(player => {
 		if (!player)
 			return;
 		drawPlayerModel(player);
-		context.save();
-		context.fillStyle = "rgb(" + player.colorR + "," + player.colorG + "," + player.colorB + ")";
-		context.fill();
-		context.restore();
 	});
 }
 function drawShips(ships: shipUpdate[]) {

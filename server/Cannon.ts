@@ -15,6 +15,7 @@ export class Cannon extends Polygon {
   barrel: Polygon;
   launchVector: Polygon;
   player: Player | undefined;
+  playerID: string = "";
   power: number;
   spaceWasDown: boolean = false;
   secondaryInteractWasTrue: boolean = false;
@@ -36,6 +37,7 @@ export class Cannon extends Polygon {
   }
   update() {
     if (this.player) {
+      this.playerID = this.player.id;
       this.player.onCannon = true;
       if (this.player.movingRight && this.direction - this.barrel.direction > .15) {
         this.barrel.rotate(.035);
@@ -130,6 +132,7 @@ export class Cannon extends Polygon {
       points: this.barrel.points.map(point => point.serializeForUpdates()),
       power: this.power,
       munitionIndex: this.munitionIndex,
+      playerID: this.playerID,
     } as cannonUpdate;
   }
 }
