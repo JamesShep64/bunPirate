@@ -84,15 +84,20 @@ export interface expolsionUpdate extends objectUpdate {
 export interface blockUpdate extends objectUpdate {
 	points: vectorUpdate[];
 }
+export interface acceleratorUpdate extends objectUpdate {
+	selected: number;
+}
 export interface shipUpdate extends objectUpdate {
 	points: vectorUpdate[];
 	zeroPoints: vectorUpdate[];
 	missingZeros: number[];
 	masses: blockUpdate[];
 	ladder: vectorUpdate[];
+	mast: vectorUpdate[];
 	topPortCannon: cannonUpdate;
 	munitions: string[];
 	direction: number;
+	accelerator: acceleratorUpdate;
 }
 export interface cannonUpdate {
 	id: string;
@@ -101,7 +106,7 @@ export interface cannonUpdate {
 	points: vectorUpdate[];
 	power: number;
 	munitionIndex: number;
-	playerID : string;
+	playerID: string;
 }
 export interface grappleUpdate extends objectUpdate {
 	launchOrigin: vectorUpdate;
@@ -117,10 +122,12 @@ export interface playerUpdate extends objectUpdate {
 	colorB: number;
 	onCannon: boolean;
 	onLadder: boolean;
+	onFloor: boolean;
 	movingUp: boolean;
 	movingDown: boolean;
 	movingLeft: boolean;
 	movingRight: boolean;
+	netVelocity: vectorUpdate;
 }
 export interface godCommand {
 	text: string;

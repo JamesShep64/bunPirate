@@ -68,6 +68,8 @@ function interpolateShips(base: shipUpdate[], next: shipUpdate[], ratio: number)
 	base.forEach((ship) => {
 		interpolateObjectArray(ship.masses, next.find(next => next.id === ship.id)?.masses, ratio);
 		interpolatePoints(ship.ladder, next.find(next => next.id === ship.id)?.ladder, ratio);
+		interpolateObject(ship.accelerator, next.find(next => next.id === ship.id)?.accelerator, ratio);
+		interpolatePoints(ship.mast, next.find(next => next.id === ship.id)?.mast, ratio);
 		interpolateObject(ship.topPortCannon, next.find(next => next.id === ship.id)?.topPortCannon, ratio);
 	});
 	return base;

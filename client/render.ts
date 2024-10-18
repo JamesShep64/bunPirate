@@ -1,6 +1,6 @@
 import { getCurrentState } from './state';
 import { blockUpdate, cannonUpdate, expolsionUpdate, godUpdate, grappleUpdate, objectUpdate, playerUpdate, shipUpdate, vectorUpdate } from '../shared/Message';
-import { animatePlayers, PlayerAnimation } from './animationHandling';
+import { animateMeteors, animatePlayers, MeteorAnimated, PlayerAnimation } from './animationHandling';
 import { Constants } from '../shared/constants';
 import { getAsset } from './assets';
 export const cameraPosition = { x: 0, y: 0 };
@@ -124,22 +124,30 @@ function drawBackground(camX: number, camY: number) {
 
 function render() {
 	const { meGod, mePlayer, otherGods, otherPlayers, blocks, ships, planets, meteors, cannonBalls, explosions, grapples } = getCurrentState();
-	if (mePlayer)
-		me = mePlayer as playerUpdate;
+
 	const { meAnimated, othersAnimated } = animatePlayers(mePlayer as playerUpdate, otherPlayers as playerUpdate[]);
+	const meteorsAnimated = animateMeteors(meteors as objectUpdate[]);
 	context.lineWidth = 2;
 	context.fillStyle = "blue";
+
 	initializeDrawing(meGod, mePlayer);
-	drawMe(meGod as godUpdate, meAnimated);
+	if (mePlayer) {
+		me = mePlayer as playerUpdate;
+		context.translate(-me.x + canvas.width / 2, -me.y + canvas.height / 2);
+	}
+	else if (meGod) {
+		context.translate(-meGod.x + canvas.width / 2, -meGod.y + canvas.height / 2);
+	}
 	drawOtherGods(otherGods as godUpdate[]);
 	drawBlocks(blocks as blockUpdate[]);
 	drawBlocks(planets as blockUpdate[]);
-	drawOtherPlayers(othersAnimated);
 	drawShips(ships as shipUpdate[]);
 	drawCannonBalls(cannonBalls as objectUpdate[]);
-	drawMeteors(meteors as objectUpdate[]);
+	drawMeteors(meteorsAnimated as MeteorAnimated[]);
 	drawExplosions(explosions as expolsionUpdate[]);
 	drawGrapples(grapples as grappleUpdate[]);
+	drawOtherPlayers(othersAnimated);
+	drawMe(meGod as godUpdate, meAnimated);
 	context.restore();
 }
 function drawCannonBalls(cannonBalls: objectUpdate[]) {
@@ -158,19 +166,18 @@ function drawCannonBalls(cannonBalls: objectUpdate[]) {
 		}
 	});
 }
-function drawMeteors(meteors: objectUpdate[]) {
+function drawMeteors(meteors: MeteorAnimated[]) {
 	if (!meteors)
 		return;
 	meteors.forEach(meteor => {
 		if (meteor) {
 			context.save();
-			context.translate(meteor.x, meteor.y);
-			context.fillStyle = "orange";
-			context.beginPath();
-			context.arc(0, 0, 20, 0, 2 * Math.PI);
-			context.closePath();
-			context.fill();
+			context.translate(meteor.meteor.x, meteor.meteor.y);
+			context.rotate(meteor.direction);
+			context.translate(-20, -20);
+			context.drawImage(getAsset("meteor.svg"), 0, 0, 40, 40);
 			context.restore();
+
 		}
 	});
 }
@@ -220,7 +227,7 @@ function drawPlayerModel(player: PlayerAnimation) {
 	context.translate(- 15, - 32);
 	context.drawImage(getAsset("face.svg"), 0, 0, 30, 50);
 	context.drawImage(getAsset("torso.svg"), 0, 0, 30, 50);
-	drawRotatedPart(6.41, 9.053, player.hair2Angle.current, "hair1.svg");
+	drawRotatedPart(6.41, 9.053, player.hair1Angle.current, "hair1.svg");
 	drawRotatedPart(20.985, 9.356, player.hair2Angle.current, "hair2.svg");
 	drawRotatedPart(14.845, 0, player.hatAngle.current, "hat.svg");
 	drawRotatedPart(11.47, 39.30, player.leftLegAngle.current, "leftLeg.svg");
@@ -243,7 +250,6 @@ function drawMe(meGod: godUpdate | undefined, mePlayer: PlayerAnimation | undefi
 	}
 	//draw me if me is player
 	if (mePlayer) {
-		context.translate(-mePlayer.player.x + canvas.width / 2, -mePlayer.player.y + canvas.height / 2);
 		cameraPosition.x = -mePlayer.player.x + canvas.width / 2;
 		cameraPosition.y = -mePlayer.player.y + canvas.height / 2;
 		drawPlayerModel(mePlayer);
@@ -360,6 +366,17 @@ function drawCannon(cannon: cannonUpdate) {
 	context.stroke();
 	context.fill();
 }
+function drawAccelerator(ship: shipUpdate) {
+	context.save();
+	context.translate(ship.accelerator.x, ship.accelerator.y);
+	context.rotate(ship.direction);
+	context.drawImage(getAsset("accelerator.svg"), 0, 0, 35, 35);
+	context.translate(16.333, 31.1111);
+	context.rotate((35 * Math.PI / 180) * ship.accelerator.selected);
+	context.translate(-16.333, -31.1111);
+	context.drawImage(getAsset("acceleratorArrow.svg"), 0, 0, 35, 35);
+	context.restore();
+}
 function drawShip(ship: shipUpdate) {
 	if (!context)
 		return;
@@ -368,7 +385,11 @@ function drawShip(ship: shipUpdate) {
 	context.beginPath();
 	context.arc(0, 0, 10, 0, 2 * Math.PI);
 	context.fill();
-
+	drawCatmullRomSpline(ship.mast, 8);
+	context.save();
+	context.fillStyle = "#EFD0B5";
+	context.fill();
+	context.restore();
 	context.beginPath();
 	drawCatmullRomSpline(ship.points, 4);
 	context.closePath();
@@ -376,12 +397,13 @@ function drawShip(ship: shipUpdate) {
 	tempCanvas.height = 100; // Original height of the SVG pattern
 	// Load the SVG image
 	// Scale the image on the temporary canvas
+	var pattern: any = undefined;
 	if (tempContext) {
 
 		// Draw the scaled image on the temporary canva
 		tempContext.drawImage(getAsset("shipTexture.svg"), 0, 0);
 		// Now create a pattern from the temporary scaled canva
-		const pattern = context.createPattern(tempCanvas, "repeat-y");
+		pattern = context.createPattern(tempCanvas, "repeat-y");
 
 		// Save the canvas state before applying transformation
 		context.save();
@@ -397,6 +419,7 @@ function drawShip(ship: shipUpdate) {
 		context.fill();
 		context.stroke();
 		// Restore the canvas state
+
 		context.restore();
 	}
 
@@ -424,6 +447,7 @@ function drawShip(ship: shipUpdate) {
 		*/
 	//draw ladder
 	drawPolygon(0, 0, ship.ladder);
+
 	//draw masses
 	context.fillStyle = 'red';
 	if (ship.masses) {
@@ -440,6 +464,7 @@ function drawShip(ship: shipUpdate) {
 	context.strokeRect(farLeft, farLeft, farRight - farLeft, farRight - farLeft);
 	drawCannon(ship.topPortCannon);
 	drawLoadout(ship, ship.topPortCannon);
+	drawAccelerator(ship);
 	context.restore();
 	// Helper function to calculate Catmull-Rom interpolation
 

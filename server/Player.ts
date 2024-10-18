@@ -166,7 +166,10 @@ export class Player extends Controllable {
       movingUp: this.movingUp,
       movingDown: this.movingDown,
       movingLeft: this.movingLeft,
+      onLadder: this.onLadder,
+      onFloor: this.physicsObject.wasOnFloor,
       movingRight: this.movingRight,
+      netVelocity: this.physicsObject.netVelocity.serializeForUpdates(),
     }
   }
 

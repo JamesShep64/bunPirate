@@ -14,6 +14,7 @@ export class PhysicsObject {
   gravityVelocity: Vector;
   gravityOn: boolean;
   onFloor: boolean;
+  wasOnFloor: boolean;
   physicsVelocities: { [key: string]: PhysicsVelocity };
   constructor() {
     this.pos = new Vector(0, 0);
@@ -26,6 +27,7 @@ export class PhysicsObject {
     this.friction = new Vector(0, 0);
     this.gravityOn = true;
     this.onFloor = false;
+    this.wasOnFloor = false;
     this.physicsVelocities = {};
   }
   update() {
@@ -41,6 +43,7 @@ export class PhysicsObject {
     this.pos.y += this.currentVelocity.y * Constants.VELOCITY_MULTIPLIER;
     this.netVelocity = this.currentVelocity.copy();
     this.currentVelocity.set(0, 0);
+    this.wasOnFloor = this.onFloor;
     this.onFloor = false;
   }
   updatePhysicsVelocities() {

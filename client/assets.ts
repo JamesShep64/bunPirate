@@ -16,6 +16,9 @@ const ASSET_NAMES = [
   'rightShirt.svg',
   'torso.svg',
   'wholePlayer.svg',
+  'accelerator.svg',
+  'acceleratorArrow.svg',
+  'meteor.svg',
 ];
 //dictionary of the images
 export const assets: { [key: string]: CanvasImageSource } = {};
@@ -30,7 +33,6 @@ function downloadAsset(assetName: string) {
     const asset = new Image();
     assets[assetName] = asset;
     asset.src = `./assets/${assetName}`;
-    console.log("downloaded", assetName);
     resolve("");
   });
 }

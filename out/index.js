@@ -120,7 +120,6 @@ function downloadAsset(assetName) {
     const asset = new Image;
     assets[assetName] = asset;
     asset.src = `./assets/${assetName}`;
-    console.log("downloaded", assetName);
     resolve("");
   });
 }
@@ -141,7 +140,10 @@ var ASSET_NAMES = [
   "rightLeg.svg",
   "rightShirt.svg",
   "torso.svg",
-  "wholePlayer.svg"
+  "wholePlayer.svg",
+  "accelerator.svg",
+  "acceleratorArrow.svg",
+  "meteor.svg"
 ];
 var assets = {};
 var downloadPromise;
@@ -207,6 +209,8 @@ function interpolateShips(base, next, ratio) {
   base.forEach((ship) => {
     interpolateObjectArray(ship.masses, next.find((next2) => next2.id === ship.id)?.masses, ratio);
     interpolatePoints(ship.ladder, next.find((next2) => next2.id === ship.id)?.ladder, ratio);
+    interpolateObject(ship.accelerator, next.find((next2) => next2.id === ship.id)?.accelerator, ratio);
+    interpolatePoints(ship.mast, next.find((next2) => next2.id === ship.id)?.mast, ratio);
     interpolateObject(ship.topPortCannon, next.find((next2) => next2.id === ship.id)?.topPortCannon, ratio);
   });
   return base;
@@ -280,12 +284,49 @@ function animatePlayers(mePlayer, otherPlayers) {
   }
   return { meAnimated, othersAnimated };
 }
+function animateMeteors(updateMeteors) {
+  const meteorsAnimated = [];
+  updateMeteors.forEach((met) => {
+    if (met) {
+      if (Object.keys(meteors).indexOf(met.id) == -1)
+        meteors[met.id] = new MeteorAnimated(met);
+      meteors[met.id].update(met);
+      meteorsAnimated.push(meteors[met.id]);
+    }
+  });
+  return meteorsAnimated;
+}
 var players = {};
+var meteors = {};
+
+class MeteorAnimated {
+  direction;
+  meteor;
+  spinRate;
+  constructor(meteor) {
+    this.meteor = meteor;
+    var spinDirection = 1;
+    if (Math.random() <= 0.5) {
+      spinDirection = -1;
+    }
+    this.spinRate = Math.random() * spinDirection * 0.1;
+    this.direction = 0;
+  }
+  update(meteor) {
+    this.direction += this.spinRate;
+    if (Math.abs(this.direction) > 2 * Math.PI) {
+      this.direction = 0;
+    }
+    this.meteor = meteor;
+  }
+}
 
 class PlayerAnimation {
   player;
   hair1Angle;
   hair2Angle;
+  hairMax = 0.15;
+  hairMin = -0.15;
   hatAngle;
   leftLegAngle;
   rightLegAngle;
@@ -294,17 +335,18 @@ class PlayerAnimation {
   leftArmAngle;
   rightArmAngle;
   bibAngle;
+  pastNetY = 0;
   constructor(playerUpdate) {
     this.player = playerUpdate;
-    this.hair1Angle = new animationTicker(-0.3, 0.3);
-    this.hair2Angle = new animationTicker(-0.3, 0.3);
-    this.hatAngle = new animationTicker(-0.1, 0.1);
+    this.hair1Angle = new animationTicker(this.hairMin, this.hairMax);
+    this.hair2Angle = new animationTicker(this.hairMin, this.hairMax);
+    this.hatAngle = new animationTicker(-0.03, 0.03);
     this.leftLegAngle = new animationTicker(-0.5, 0.5);
     this.rightLegAngle = new animationTicker(-0.5, 0.5);
-    this.leftShirtAngle = new animationTicker(-0.2, 0.2);
-    this.rightShirtAngle = new animationTicker(-0.2, 0.2);
-    this.leftArmAngle = new animationTicker(-0.5, 0.5);
-    this.rightArmAngle = new animationTicker(-0.5, 0.5);
+    this.leftShirtAngle = new shirtTicker(0.1);
+    this.rightShirtAngle = new shirtTicker(-0.1);
+    this.leftArmAngle = new animationTicker(-0.3, 1);
+    this.rightArmAngle = new animationTicker(-1, 0.3);
     this.bibAngle = new animationTicker(-0.1, 0.1);
   }
   walkRight() {
@@ -327,19 +369,94 @@ class PlayerAnimation {
     this.leftLegAngle.rest = false;
     this.rightLegAngle.rest = false;
   }
+  movingOnLadder() {
+    this.leftArmAngle.tick = 0.06;
+    this.leftArmAngle.bounceOnMax = true;
+    this.leftArmAngle.bounceOnMin = true;
+    this.rightArmAngle.tick = -0.06;
+    this.rightArmAngle.bounceOnMax = true;
+    this.rightArmAngle.bounceOnMin = true;
+    this.leftArmAngle.rest = false;
+    this.rightArmAngle.rest = false;
+  }
+  jumping() {
+    this.leftArmAngle.tick = 0.05;
+    this.rightArmAngle.tick = -0.05;
+    this.leftArmAngle.bounceOnMax = false;
+    this.rightArmAngle.bounceOnMin = false;
+    this.leftArmAngle.rest = false;
+    this.rightArmAngle.rest = false;
+    this.leftLegAngle.tick = 0.05;
+    this.rightLegAngle.tick = -0.05;
+    this.leftLegAngle.bounceOnMax = false;
+    this.rightLegAngle.bounceOnMin = false;
+    this.leftLegAngle.rest = false;
+    this.rightLegAngle.rest = false;
+  }
+  stopClimbing() {
+    this.leftArmAngle.rest = true;
+    this.rightArmAngle.rest = true;
+    this.leftArmAngle.bounceOnMin = true;
+    this.rightArmAngle.bounceOnMax = true;
+    this.leftArmAngle.bounceOnMax = true;
+    this.rightArmAngle.bounceOnMin = true;
+  }
   stopWalking() {
     this.leftLegAngle.rest = true;
     this.rightLegAngle.rest = true;
+    this.rightLegAngle.bounceOnMax = true;
+    this.rightLegAngle.bounceOnMin = true;
+    this.leftLegAngle.bounceOnMax = true;
+    this.leftLegAngle.bounceOnMin = true;
+  }
+  hairAnimate() {
+    this.hair1Angle.tick = 0.005;
+    this.hair1Angle.bounceOnMax = true;
+    this.hair1Angle.bounceOnMin = true;
+    this.hair1Angle.max = this.hairMax + this.player.netVelocity.x * 0.15;
+    this.hair1Angle.min = this.hairMin + this.player.netVelocity.x * 0.15;
+    this.hair2Angle.tick = -0.004;
+    this.hair2Angle.bounceOnMax = true;
+    this.hair2Angle.bounceOnMin = true;
+    this.hair2Angle.max = this.hairMax + this.player.netVelocity.x * 0.15;
+    this.hair2Angle.min = this.hairMin + this.player.netVelocity.x * 0.15;
+    this.hair1Angle.rest = false;
+    this.hair2Angle.rest = false;
+  }
+  shirtAnimate() {
+    this.leftShirtAngle.tick = -0.01;
+    this.rightShirtAngle.tick = 0.01;
+    this.leftShirtAngle.limit = Math.abs(this.player.netVelocity.y * 0.1);
+    this.rightShirtAngle.limit = -Math.abs(this.player.netVelocity.y * 0.1);
+  }
+  hatAnimate() {
+    this.hatAngle.tick = 0.01;
+    this.hatAngle.bounceOnMax = false;
+    this.hatAngle.bounceOnMin = false;
+    if (this.player.movingLeft)
+      this.hatAngle.bounceOnMin = true;
+    if (this.player.movingRight)
+      this.hatAngle.bounceOnMax = true;
   }
   update(player) {
     this.player = player;
-    if (player.movingRight) {
+    if (player.movingRight && !player.onLadder && player.onFloor) {
       this.walkRight();
-    } else if (player.movingLeft) {
+    } else if (player.movingLeft && !player.onLadder && player.onFloor) {
       this.walkLeft();
     } else {
       this.stopWalking();
     }
+    if (player.onLadder && (player.movingUp || player.movingDown || player.movingLeft || player.movingRight)) {
+      this.movingOnLadder();
+    } else if (!player.onFloor) {
+      this.jumping();
+    } else {
+      this.stopClimbing();
+    }
+    this.hatAnimate();
+    this.hairAnimate();
+    this.shirtAnimate();
     this.hair1Angle.update();
     this.hair2Angle.update();
     this.hatAngle.update();
@@ -364,6 +481,8 @@ class animationTicker {
   goToNuetral = false;
   hitMin = false;
   hitMax = false;
+  setMin = true;
+  setMax = true;
   constructor(min, max) {
     this.min = min;
     this.max = max;
@@ -385,15 +504,39 @@ class animationTicker {
         this.hitMin = true;
         this.hitMax = false;
       }
-      this.current = this.min;
+      if (this.setMin)
+        this.current = this.min;
     }
     if (this.current >= this.max) {
       if (this.bounceOnMax) {
         this.hitMax = true;
         this.hitMin = false;
-        console.log("MAX", this.tick);
       }
-      this.current = this.max;
+      if (this.setMax)
+        this.current = this.max;
+    }
+  }
+}
+
+class shirtTicker {
+  limit;
+  current = 0;
+  tick = 0;
+  onGround = false;
+  constructor(limit) {
+    this.limit = limit;
+  }
+  update() {
+    const lessThanBefore = this.current < this.limit;
+    if (Math.abs(this.current) > Math.abs(this.limit)) {
+      this.current += this.tick;
+    }
+    if (Math.abs(this.current) < Math.abs(this.limit)) {
+      this.current -= this.tick;
+    }
+    const greaterOrEqualAfter = this.current >= this.limit;
+    if (lessThanBefore == greaterOrEqualAfter) {
+      this.current = this.limit;
     }
   }
 }
@@ -479,23 +622,28 @@ function drawBackground(camX, camY) {
   context.fillStyle = "red";
 }
 function render() {
-  const { meGod, mePlayer, otherGods, otherPlayers, blocks, ships, planets, meteors, cannonBalls, explosions, grapples } = getCurrentState();
-  if (mePlayer)
-    me = mePlayer;
+  const { meGod, mePlayer, otherGods, otherPlayers, blocks, ships, planets, meteors: meteors2, cannonBalls, explosions, grapples } = getCurrentState();
   const { meAnimated, othersAnimated } = animatePlayers(mePlayer, otherPlayers);
+  const meteorsAnimated = animateMeteors(meteors2);
   context.lineWidth = 2;
   context.fillStyle = "blue";
   initializeDrawing(meGod, mePlayer);
-  drawMe(meGod, meAnimated);
+  if (mePlayer) {
+    me = mePlayer;
+    context.translate(-me.x + canvas.width / 2, -me.y + canvas.height / 2);
+  } else if (meGod) {
+    context.translate(-meGod.x + canvas.width / 2, -meGod.y + canvas.height / 2);
+  }
   drawOtherGods(otherGods);
   drawBlocks(blocks);
   drawBlocks(planets);
-  drawOtherPlayers(othersAnimated);
   drawShips(ships);
   drawCannonBalls(cannonBalls);
-  drawMeteors(meteors);
+  drawMeteors(meteorsAnimated);
   drawExplosions(explosions);
   drawGrapples(grapples);
+  drawOtherPlayers(othersAnimated);
+  drawMe(meGod, meAnimated);
   context.restore();
 }
 function drawCannonBalls(cannonBalls) {
@@ -514,18 +662,16 @@ function drawCannonBalls(cannonBalls) {
     }
   });
 }
-function drawMeteors(meteors) {
-  if (!meteors)
+function drawMeteors(meteors2) {
+  if (!meteors2)
     return;
-  meteors.forEach((meteor) => {
+  meteors2.forEach((meteor) => {
     if (meteor) {
       context.save();
-      context.translate(meteor.x, meteor.y);
-      context.fillStyle = "orange";
-      context.beginPath();
-      context.arc(0, 0, 20, 0, 2 * Math.PI);
-      context.closePath();
-      context.fill();
+      context.translate(meteor.meteor.x, meteor.meteor.y);
+      context.rotate(meteor.direction);
+      context.translate(-20, -20);
+      context.drawImage(getAsset("meteor.svg"), 0, 0, 40, 40);
       context.restore();
     }
   });
@@ -575,7 +721,7 @@ function drawPlayerModel(player) {
   context.translate(-15, -32);
   context.drawImage(getAsset("face.svg"), 0, 0, 30, 50);
   context.drawImage(getAsset("torso.svg"), 0, 0, 30, 50);
-  drawRotatedPart(6.41, 9.053, player.hair2Angle.current, "hair1.svg");
+  drawRotatedPart(6.41, 9.053, player.hair1Angle.current, "hair1.svg");
   drawRotatedPart(20.985, 9.356, player.hair2Angle.current, "hair2.svg");
   drawRotatedPart(14.845, 0, player.hatAngle.current, "hat.svg");
   drawRotatedPart(11.47, 39.3, player.leftLegAngle.current, "leftLeg.svg");
@@ -594,7 +740,6 @@ function drawMe(meGod, mePlayer) {
     cameraPosition.y = -meGod.y + canvas.height / 2;
   }
   if (mePlayer) {
-    context.translate(-mePlayer.player.x + canvas.width / 2, -mePlayer.player.y + canvas.height / 2);
     cameraPosition.x = -mePlayer.player.x + canvas.width / 2;
     cameraPosition.y = -mePlayer.player.y + canvas.height / 2;
     drawPlayerModel(mePlayer);
@@ -602,8 +747,6 @@ function drawMe(meGod, mePlayer) {
   }
 }
 function drawLoadout(ship, cannon) {
-  if (me && cannon)
-    console.log(me.id, cannon.playerID);
   if (!me?.onCannon || me.id != cannon.playerID)
     return;
   context.save();
@@ -710,6 +853,17 @@ function drawCannon(cannon) {
   context.stroke();
   context.fill();
 }
+function drawAccelerator(ship) {
+  context.save();
+  context.translate(ship.accelerator.x, ship.accelerator.y);
+  context.rotate(ship.direction);
+  context.drawImage(getAsset("accelerator.svg"), 0, 0, 35, 35);
+  context.translate(16.333, 31.1111);
+  context.rotate(35 * Math.PI / 180 * ship.accelerator.selected);
+  context.translate(-16.333, -31.1111);
+  context.drawImage(getAsset("acceleratorArrow.svg"), 0, 0, 35, 35);
+  context.restore();
+}
 function drawShip(ship) {
   if (!context)
     return;
@@ -718,14 +872,20 @@ function drawShip(ship) {
   context.beginPath();
   context.arc(0, 0, 10, 0, 2 * Math.PI);
   context.fill();
+  drawCatmullRomSpline(ship.mast, 8);
+  context.save();
+  context.fillStyle = "#EFD0B5";
+  context.fill();
+  context.restore();
   context.beginPath();
   drawCatmullRomSpline(ship.points, 4);
   context.closePath();
   tempCanvas.width = 500;
   tempCanvas.height = 100;
+  var pattern = undefined;
   if (tempContext) {
     tempContext.drawImage(getAsset("shipTexture.svg"), 0, 0);
-    const pattern = context.createPattern(tempCanvas, "repeat-y");
+    pattern = context.createPattern(tempCanvas, "repeat-y");
     context.save();
     context.rotate(ship.direction);
     context.translate(-225, -200);
@@ -752,6 +912,7 @@ function drawShip(ship) {
   context.strokeRect(farLeft, farLeft, farRight - farLeft, farRight - farLeft);
   drawCannon(ship.topPortCannon);
   drawLoadout(ship, ship.topPortCannon);
+  drawAccelerator(ship);
   context.restore();
 }
 function catmullRom(p0, p1, p2, p3, t) {

@@ -12,6 +12,7 @@ import { Cannon } from "./Cannon";
 import { Grapple } from "./Grapple";
 import { game } from "./users";
 import { Munitions } from "./Munitions";
+import { Accelerator } from "./Accelerator";
 export class PirateShip {
   pos: Vector;
   displace: Vector;
@@ -33,6 +34,7 @@ export class PirateShip {
   upsideDown: boolean = false;
   physicsObject: PhysicsObject;
   ladder: Polygon;
+  mast: Polygon;
   spawnPoint: Polygon;
   shipsCollided: string[];
   rollingAverage: Queue;
@@ -40,6 +42,7 @@ export class PirateShip {
   topPortCannon: Cannon;
   grapple: Grapple | undefined;
   munitions: Munitions = new Munitions();
+  accelerator: Accelerator;
   constructor(id: string, x: number, y: number) {
     this.id = id;
     this.pos = new Vector(x, y);
@@ -59,14 +62,16 @@ export class PirateShip {
     this.physicsObject = new PhysicsObject();
     this.physicsObject.gravityOn = false;
     this.bodyPoly = new Polygon(x, y, [new Vector(-220, -30), new Vector(-35, -30), new Vector(-35, 0), new Vector(-125, 0), new Vector(-125, 65), new Vector(125, 65), new Vector(125, 0), new Vector(35, 0), new Vector(35, -30), new Vector(220, -30), new Vector(220, 0), new Vector(140, 100), new Vector(-140, 100), new Vector(-220, 0)], false, 220, id);
-
+    this.mast = new Polygon(0, 0, [new Vector(75, -30), new Vector(95, -30), new Vector(95, -170), new Vector(75, -170)], false, 170);
     this.damagePoly = new Polygon(x, y, [new Vector(-220, -25), new Vector(-180, -30), new Vector(-140, -30), new Vector(-100, -30), new Vector(-60, -30), new Vector(-35, -25), new Vector(-35, 0), new Vector(-125, 0), new Vector(-125, 60), new Vector(-100, 65), new Vector(-60, 65), new Vector(-20, 65), new Vector(20, 65), new Vector(60, 65), new Vector(90, 65), new Vector(125, 60), new Vector(125, 0), new Vector(35, 0), new Vector(35, -25), new Vector(60, -30), new Vector(100, -30), new Vector(140, -30), new Vector(180, -30), new Vector(220, -25), new Vector(220, 0), new Vector(204, 20), new Vector(188, 40), new Vector(172, 60), new Vector(156, 80), new Vector(140, 100), new Vector(100, 100), new Vector(60, 100), new Vector(20, 100), new Vector(-20, 100), new Vector(-60, 100), new Vector(-100, 100), new Vector(-140, 100), new Vector(-164, 70), new Vector(-188, 40), new Vector(-220, 0)], false, 220, id);
     this.collisionZerosPolygon = new Polygon(0, 0, [new Vector(-210, -20), new Vector(-45, -20), new Vector(-45, -10), new Vector(45, -10), new Vector(45, -20), new Vector(210, -20), new Vector(210, -10), new Vector(130, 90), new Vector(-130, 90), new Vector(-210, -10)], false, 220);
-    this.ladder = new Polygon(0, 0, [new Vector(-10, -30), new Vector(10, -30), new Vector(10, 50), new Vector(-10, 50)], true, 90);
+    this.ladder = new Polygon(0, 0, [new Vector(-10, -30), new Vector(10, -30), new Vector(10, 50), new Vector(-10, 50)], true, 80);
     this.spawnPoint = new Polygon(0, 0, [new Vector(100, -50)], false, 0);
     this.topPortCannon = new Cannon(-180, -40, this.pos, this);
+    this.accelerator = new Accelerator(this);
     this.collisionZerosPolygon.pos = this.pos;
     this.ladder.pos = this.pos;
+    this.mast.pos = this.pos;
     this.bodyPoly.pos = this.pos;
     this.damagePoly.pos = this.pos;
     this.physicsObject.pos = this.pos;
@@ -107,6 +112,7 @@ export class PirateShip {
     }
     this.playerLadderCollisions();
     this.playerCannonCollisions();
+    this.acceleratorCollisions();
     this.topPortCannon.update();
     this.rollingAverage.update();
     putInGrid(this.pos, this);
@@ -151,6 +157,8 @@ export class PirateShip {
     this.topPortCannon.doRotate(angle, cos, sin);
     this.spawnPoint.rotate(angle, cos, sin);
     this.damagePoly.rotate(angle, cos, sin);
+    this.mast.rotate(angle, cos, sin);
+    this.accelerator.rotate(angle, cos, sin);
     this.masses.forEach(mass => { if (mass) mass.poly.rotate(angle) });
     if (withPolys) {
       Object.values(this.players).forEach((player) => {
@@ -171,19 +179,26 @@ export class PirateShip {
   playerLadderCollisions() {
     Object.values(this.players).forEach(player => {
       const onLadder = checkHalfPolygonPolygonCollision(player.hitBox, this.ladder);
-      if (onLadder && player.onLadder) {
+      const onMast = checkHalfPolygonPolygonCollision(player.hitBox, this.mast);
+
+      if ((onLadder || onMast) && player.onLadder) {
         player.applyFriction(this.forward, this.physicsObject, this.bodyPoly);
       }
-      if (onLadder && (player.movingUp || player.movingDown)) {
+      if ((onLadder || onMast) && (player.movingUp || player.movingDown)) {
         player.onLadder = true;
       }
-      if (!onLadder)
+      if (!(onLadder || onMast))
         player.onLadder = false;
     });
   }
   playerCannonCollisions() {
     Object.values(this.players).forEach(player => {
       this.topPortCannon.checkPlayerWithinRect(player);
+    });
+  }
+  acceleratorCollisions() {
+    Object.values(this.players).forEach(player => {
+      this.accelerator.playerInteract(player);
     });
   }
   addDisplacement(vec: Vector) {
@@ -271,9 +286,11 @@ export class PirateShip {
       missingZeros: this.missingZeros,
       masses: this.masses.map(mass => mass.serializeForUpdates()),
       ladder: this.ladder.points.map(point => point.serializeForUpdates()),
+      mast: this.mast.points.map(point => point.serializeForUpdates()),
       topPortCannon: this.topPortCannon.serializeForUpdate(),
       munitions: this.munitions.getLoadOut(),
       direction: this.bodyPoly.direction,
+      accelerator: this.accelerator.serializeForUpdates(),
     } as shipUpdate;
   }
 

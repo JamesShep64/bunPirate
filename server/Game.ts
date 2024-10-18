@@ -116,6 +116,7 @@ export class Game {
     delete this.explosions[id];
   }
   update() {
+    const begin = Date.now();
     Object.values(this.gods).forEach(god => god.update());
     Object.values(this.ships).forEach(ship => ship.update());
     Object.values(this.blocks).forEach(block => block.update());

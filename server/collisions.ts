@@ -74,11 +74,14 @@ export function checkHalfPolygonPolygonCollision(poly1: Polygon, poly2: Polygon)
   }
   return false;
 }
-export function explosiveCollision(poly1: Polygon, poly2: Polygon) {
+export function explosiveCollision(poly1: Explosion, poly2: Polygon) {
   if (poly1.pos.x > poly2.pos.x + poly1.size + poly2.size || poly1.pos.x < poly2.pos.x - poly1.size - poly2.size || poly1.pos.y > poly2.pos.y + poly1.size + poly2.size || poly1.pos.y < poly2.pos.y - poly1.size - poly2.size)
+    return;
+  if (poly1.collisionIDs.indexOf(poly2.id) != -1)
     return;
   const vel = new Vector(poly2.pos.x - poly1.pos.x, poly2.pos.y - poly1.pos.y);
   vel.unit();
+  poly1.collisionIDs.push(poly2.id);
   return vel;
 }
 export function DamageShipCollision(poly1: Polygon, poly2: Polygon) {
