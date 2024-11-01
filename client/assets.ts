@@ -19,6 +19,7 @@ const ASSET_NAMES = [
   'accelerator.svg',
   'acceleratorArrow.svg',
   'meteor.svg',
+  'planet.svg',
 ];
 //dictionary of the images
 export const assets: { [key: string]: CanvasImageSource } = {};

@@ -1,5 +1,5 @@
 import { getCurrentState } from './state';
-import { blockUpdate, cannonUpdate, expolsionUpdate, godUpdate, grappleUpdate, objectUpdate, playerUpdate, shipUpdate, vectorUpdate } from '../shared/Message';
+import { polyUpdate, cannonUpdate, expolsionUpdate, godUpdate, grappleUpdate, objectUpdate, playerUpdate, shipUpdate, vectorUpdate } from '../shared/Message';
 import { animateMeteors, animatePlayers, MeteorAnimated, PlayerAnimation } from './animationHandling';
 import { Constants } from '../shared/constants';
 import { getAsset } from './assets';
@@ -139,8 +139,8 @@ function render() {
 		context.translate(-meGod.x + canvas.width / 2, -meGod.y + canvas.height / 2);
 	}
 	drawOtherGods(otherGods as godUpdate[]);
-	drawBlocks(blocks as blockUpdate[]);
-	drawBlocks(planets as blockUpdate[]);
+	drawBlocks(blocks as polyUpdate[]);
+	drawPlanets(planets as polyUpdate[]);
 	drawShips(ships as shipUpdate[]);
 	drawCannonBalls(cannonBalls as objectUpdate[]);
 	drawMeteors(meteorsAnimated as MeteorAnimated[]);
@@ -299,13 +299,23 @@ function drawOtherGods(otherGods: godUpdate[]) {
 		drawGod(other.x, other.y);
 	});
 }
-function drawBlocks(blocks: blockUpdate[]) {
+function drawBlocks(blocks: polyUpdate[]) {
 	if (!blocks)
 		return;
 	blocks.forEach(block => {
 		if (!block)
 			return;
 		drawPolygon(block.x, block.y, block.points);
+	});
+}
+function drawPlanets(planets: polyUpdate[]) {
+	if (!planets)
+		return;
+	planets.forEach(planet => {
+		context.save();
+		context.translate(planet.x, planet.y);
+		context.drawImage(getAsset("planet.svg"), -100, -100);
+		context.restore();
 	});
 }
 function drawOtherPlayers(otherPlayers: PlayerAnimation[] | undefined) {
@@ -370,6 +380,7 @@ function drawAccelerator(ship: shipUpdate) {
 	context.save();
 	context.translate(ship.accelerator.x, ship.accelerator.y);
 	context.rotate(ship.direction);
+	context.translate(-16, -22);
 	context.drawImage(getAsset("accelerator.svg"), 0, 0, 35, 35);
 	context.translate(16.333, 31.1111);
 	context.rotate((35 * Math.PI / 180) * ship.accelerator.selected);
@@ -386,6 +397,7 @@ function drawShip(ship: shipUpdate) {
 	context.arc(0, 0, 10, 0, 2 * Math.PI);
 	context.fill();
 	drawCatmullRomSpline(ship.mast, 8);
+	context.stroke();
 	context.save();
 	context.fillStyle = "#EFD0B5";
 	context.fill();
@@ -458,10 +470,6 @@ function drawShip(ship: shipUpdate) {
 		});
 	}
 	//draw rect around ship
-	var farLeft = -230;
-	var farRight = 230;
-	context.beginPath();
-	context.strokeRect(farLeft, farLeft, farRight - farLeft, farRight - farLeft);
 	drawCannon(ship.topPortCannon);
 	drawLoadout(ship, ship.topPortCannon);
 	drawAccelerator(ship);

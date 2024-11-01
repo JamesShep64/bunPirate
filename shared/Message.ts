@@ -53,7 +53,7 @@ export interface gameUpdate {
 	mePlayer: playerUpdate;
 	otherGods: godUpdate[];
 	otherPlayers: playerUpdate[];
-	blocks: blockUpdate[];
+	blocks: polyUpdate[];
 	ships: shipUpdate[];
 	planets: planetUpdate[];
 	meteors: objectUpdate[];
@@ -74,14 +74,15 @@ export interface objectUpdate {
 	id: string;
 	x: number;
 	y: number;
+	direction: number;
 }
-export interface planetUpdate extends blockUpdate {
+export interface planetUpdate extends polyUpdate {
 
 }
 export interface expolsionUpdate extends objectUpdate {
 	size: number;
 }
-export interface blockUpdate extends objectUpdate {
+export interface polyUpdate extends objectUpdate {
 	points: vectorUpdate[];
 }
 export interface acceleratorUpdate extends objectUpdate {
@@ -91,18 +92,14 @@ export interface shipUpdate extends objectUpdate {
 	points: vectorUpdate[];
 	zeroPoints: vectorUpdate[];
 	missingZeros: number[];
-	masses: blockUpdate[];
+	masses: polyUpdate[];
 	ladder: vectorUpdate[];
 	mast: vectorUpdate[];
 	topPortCannon: cannonUpdate;
 	munitions: string[];
-	direction: number;
 	accelerator: acceleratorUpdate;
 }
-export interface cannonUpdate {
-	id: string;
-	x: number;
-	y: number;
+export interface cannonUpdate extends objectUpdate {
 	points: vectorUpdate[];
 	power: number;
 	munitionIndex: number;
@@ -116,7 +113,6 @@ export interface godUpdate extends objectUpdate {
 }
 export interface playerUpdate extends objectUpdate {
 	points: vectorUpdate[];
-	direction: number;
 	colorR: number;
 	colorG: number;
 	colorB: number;

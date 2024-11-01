@@ -1,4 +1,4 @@
-import { blockUpdate, gameUpdate, grappleUpdate, objectUpdate, shipUpdate, vectorUpdate } from "../shared/Message";
+import { polyUpdate, gameUpdate, grappleUpdate, objectUpdate, shipUpdate, vectorUpdate } from "../shared/Message";
 import { toggleInterpolate } from "./inputs";
 
 const RENDER_DELAY = 50;
@@ -74,15 +74,18 @@ function interpolateShips(base: shipUpdate[], next: shipUpdate[], ratio: number)
 	});
 	return base;
 }
-function interpolateObject(base: blockUpdate | objectUpdate | undefined, next: blockUpdate | objectUpdate | undefined, ratio: number) {
+function interpolateObject(base: polyUpdate | objectUpdate | undefined, next: polyUpdate | objectUpdate | undefined, ratio: number) {
 	if (!base || !next)
 		return;
 	if (base.x && base.y) {
 		base.x = (next.x - base.x) * ratio + base.x;
 		base.y = (next.y - base.y) * ratio + base.y;
 	}
-	var b = base as blockUpdate;
-	var n = next as blockUpdate;
+	if (base.direction) {
+		base.direction = (next.direction - base.direction) * ratio + base.direction;
+	}
+	var b = base as polyUpdate;
+	var n = next as polyUpdate;
 	if (b.points) {
 		interpolatePoints(b.points, n.points, ratio);
 	}
@@ -107,7 +110,7 @@ function interpolateGrapples(base: grappleUpdate[] | undefined, next: grappleUpd
 	interpolateObjectArray(base, next, ratio);
 	if (base && next) {
 		base.forEach((grapple) => {
-			interpolateObject(grapple.launchOrigin, next.find(next => next.id === grapple.id)?.launchOrigin, ratio);
+			interpolateObject(grapple.launchOrigin as objectUpdate, next.find(next => next.id === grapple.id)?.launchOrigin as objectUpdate, ratio);
 		});
 	}
 	return base;

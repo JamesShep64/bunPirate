@@ -7,7 +7,7 @@ var Constants = {
   BLOCK_SIZE: 20,
   SCORE_PER_SECOND: 1,
   PI: 3.14,
-  VELOCITY_MULTIPLIER: 2.5,
+  VELOCITY_MULTIPLIER: 4.6,
   MAP_SIZE: 3000,
   MAP_HEIGHT: 4500,
   MAP_WIDTH: 4500,
@@ -16,7 +16,7 @@ var Constants = {
   BLOCK_HEIGHT: 30,
   BLOCK_WIDTH: 25,
   MAX_GRAVITY: 6,
-  GRAVITY_MULT: 0.1,
+  GRAVITY_MULT: 0.08,
   MSG_TYPES: {
     INPUT: "user input",
     GOD_JOINED: "god joined game",
@@ -143,7 +143,8 @@ var ASSET_NAMES = [
   "wholePlayer.svg",
   "accelerator.svg",
   "acceleratorArrow.svg",
-  "meteor.svg"
+  "meteor.svg",
+  "planet.svg"
 ];
 var assets = {};
 var downloadPromise;
@@ -222,6 +223,9 @@ function interpolateObject(base, next, ratio) {
     base.x = (next.x - base.x) * ratio + base.x;
     base.y = (next.y - base.y) * ratio + base.y;
   }
+  if (base.direction) {
+    base.direction = (next.direction - base.direction) * ratio + base.direction;
+  }
   var b = base;
   var n = next;
   if (b.points) {
@@ -286,6 +290,8 @@ function animatePlayers(mePlayer, otherPlayers) {
 }
 function animateMeteors(updateMeteors) {
   const meteorsAnimated = [];
+  if (!updateMeteors)
+    return;
   updateMeteors.forEach((met) => {
     if (met) {
       if (Object.keys(meteors).indexOf(met.id) == -1)
@@ -413,13 +419,13 @@ class PlayerAnimation {
     this.hair1Angle.tick = 0.005;
     this.hair1Angle.bounceOnMax = true;
     this.hair1Angle.bounceOnMin = true;
-    this.hair1Angle.max = this.hairMax + this.player.netVelocity.x * 0.15;
-    this.hair1Angle.min = this.hairMin + this.player.netVelocity.x * 0.15;
+    this.hair1Angle.max = this.hairMax + this.player.netVelocity.x * 0.1;
+    this.hair1Angle.min = this.hairMin + this.player.netVelocity.x * 0.1;
     this.hair2Angle.tick = -0.004;
     this.hair2Angle.bounceOnMax = true;
     this.hair2Angle.bounceOnMin = true;
-    this.hair2Angle.max = this.hairMax + this.player.netVelocity.x * 0.15;
-    this.hair2Angle.min = this.hairMin + this.player.netVelocity.x * 0.15;
+    this.hair2Angle.max = this.hairMax + this.player.netVelocity.x * 0.1;
+    this.hair2Angle.min = this.hairMin + this.player.netVelocity.x * 0.1;
     this.hair1Angle.rest = false;
     this.hair2Angle.rest = false;
   }
@@ -636,7 +642,7 @@ function render() {
   }
   drawOtherGods(otherGods);
   drawBlocks(blocks);
-  drawBlocks(planets);
+  drawPlanets(planets);
   drawShips(ships);
   drawCannonBalls(cannonBalls);
   drawMeteors(meteorsAnimated);
@@ -796,6 +802,16 @@ function drawBlocks(blocks) {
     drawPolygon(block.x, block.y, block.points);
   });
 }
+function drawPlanets(planets) {
+  if (!planets)
+    return;
+  planets.forEach((planet) => {
+    context.save();
+    context.translate(planet.x, planet.y);
+    context.drawImage(getAsset("planet.svg"), -100, -100);
+    context.restore();
+  });
+}
 function drawOtherPlayers(otherPlayers) {
   if (!otherPlayers)
     return;
@@ -857,6 +873,7 @@ function drawAccelerator(ship) {
   context.save();
   context.translate(ship.accelerator.x, ship.accelerator.y);
   context.rotate(ship.direction);
+  context.translate(-16, -22);
   context.drawImage(getAsset("accelerator.svg"), 0, 0, 35, 35);
   context.translate(16.333, 31.1111);
   context.rotate(35 * Math.PI / 180 * ship.accelerator.selected);
@@ -873,6 +890,7 @@ function drawShip(ship) {
   context.arc(0, 0, 10, 0, 2 * Math.PI);
   context.fill();
   drawCatmullRomSpline(ship.mast, 8);
+  context.stroke();
   context.save();
   context.fillStyle = "#EFD0B5";
   context.fill();
@@ -906,10 +924,6 @@ function drawShip(ship) {
       context.fill();
     });
   }
-  var farLeft = -230;
-  var farRight = 230;
-  context.beginPath();
-  context.strokeRect(farLeft, farLeft, farRight - farLeft, farRight - farLeft);
   drawCannon(ship.topPortCannon);
   drawLoadout(ship, ship.topPortCannon);
   drawAccelerator(ship);

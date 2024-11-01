@@ -40,7 +40,7 @@ export class Game {
     this.grapples = {};
     this.users = [];
     this.collisionGrid = Array.from({ length: ~~(Constants.MAP_WIDTH / 500) }, () => Array.from({ length: ~~(Constants.MAP_HEIGHT / 500) }, () => new CollisionSection()));
-    this.intervalID = setInterval(this.update.bind(this), 1000 / 30);
+    this.intervalID = setInterval(this.update.bind(this), 1000 / 20);
   }
   disconnect(id: string) {
     var us = this.users;
@@ -144,6 +144,9 @@ export class Game {
         this.collisionGrid[i][j].clear();
       }
     }
+    const b = Date.now() - begin;
+    if (b > 3)
+      console.log(b);
   }
   createUpdate(id: string) {
     const otherGods = Object.keys(this.gods).filter((key: string) => key !== id).map((key) => this.gods[key]);

@@ -133,7 +133,7 @@ export function godAddMeteor(id: string) {
   const meteorID = generateUniqueId({ length: 8 });
   var velocity = game.gods[id].clickPoint.subtractReturn(game.gods[id].placePoint);
   const v = velocity.unitReturn();
-  v.unitMultiply(.5);
+  v.unitMultiply(1.5);
   const met = new Meteor(meteorID, game.gods[id].placePoint.x, game.gods[id].placePoint.y, v);
   game.addMeteor(met);
 }
@@ -148,6 +148,11 @@ export function godRotateShip(id: string, angle: number) {
   }
 }
 
+export function godTurnShip(id: string) {
+  if (game.gods[id].controlledShip) {
+    game.gods[id].controlledShip.turn *= -1;
+  }
+}
 export function godAddShip(id: string) {
   const shipID = generateUniqueId({ length: 8 });
   var ship = new PirateShip(shipID, game.gods[id].placePoint.x, game.gods[id].placePoint.y);

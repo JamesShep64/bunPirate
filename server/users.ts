@@ -2,7 +2,7 @@ import { Constants } from "../shared/constants";
 import { Action, gameUpdate, godCommand, keyEvent, Message } from "../shared/Message";
 import { Game } from "./Game";
 import { sendMessage } from "./websockets";
-import { addGod, moveLeft, moveDown, moveUp, playerJump, godTogglePlayerGravity, moveRight, godClearMass, godAddMass, godFollowShip, handleMouseMove, handleMouseClick, stopRight, stopUp, stopDown, stopLeft, godAddShip, godAddBlock, godAddPlayer, changeTicks, godRotateShip, godFreezeShip, godAddPlanet, playerStartHolding, playerStopHolding, playerStopSpace, playerStartSecondaryInteract, playerStopSecondaryInteract, godAddMeteor, godAddExplosion } from "./gameUserInteraction";
+import { addGod, moveLeft, moveDown, moveUp, playerJump, godTogglePlayerGravity, moveRight, godClearMass, godAddMass, godFollowShip, handleMouseMove, handleMouseClick, stopRight, stopUp, stopDown, stopLeft, godAddShip, godAddBlock, godAddPlayer, changeTicks, godRotateShip, godFreezeShip, godAddPlanet, playerStartHolding, playerStopHolding, playerStopSpace, playerStartSecondaryInteract, playerStopSecondaryInteract, godAddMeteor, godAddExplosion, godTurnShip } from "./gameUserInteraction";
 import generateUniqueId from "generate-unique-id";
 import { Lobby } from "./Lobby";
 import { User } from "./User";
@@ -157,6 +157,10 @@ function handleCommands(action: Action) {
 			break;
 		case "r":
 			godRotateShip(action.id, Number(command[1]));
+			break;
+
+		case "turn":
+			godTurnShip(action.id);
 			break;
 		case "mass":
 			if (command[1] == "clear")

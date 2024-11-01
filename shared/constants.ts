@@ -6,7 +6,7 @@ export const Constants = {
   BLOCK_SIZE: 20,
   SCORE_PER_SECOND: 1,
   PI: 3.14,
-  VELOCITY_MULTIPLIER: 2.5,
+  VELOCITY_MULTIPLIER: 4.6,
   MAP_SIZE: 3000,
   MAP_HEIGHT: 4500,
   MAP_WIDTH: 4500,
@@ -15,7 +15,7 @@ export const Constants = {
   BLOCK_HEIGHT: 30,
   BLOCK_WIDTH: 25,
   MAX_GRAVITY: 6,
-  GRAVITY_MULT: .1,
+  GRAVITY_MULT: .08,
 
   MSG_TYPES: {
     INPUT: 'user input',

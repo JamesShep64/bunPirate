@@ -37,8 +37,15 @@ export class Cannon extends Polygon {
   }
   update() {
     if (this.player) {
+      if (!this.checkPointWithinRect(this.player.hitBox, 10)) {
+        this.player = undefined;
+        this.controlled = false;
+        this.playerID = "";
+        return;
+      }
       this.playerID = this.player.id;
       this.player.onCannon = true;
+      this.player.isInteracting = true;
       if (this.player.movingRight && this.direction - this.barrel.direction > .15) {
         this.barrel.rotate(.035);
         this.launchVector.rotate(.035);
@@ -54,7 +61,6 @@ export class Cannon extends Polygon {
       if (this.player.secondaryInteracting && !this.secondaryInteractWasTrue) {
         this.secondaryInteractWasTrue = true;
         this.incrementMunitionIndex();
-        this.player.munitionIndex = this.munitionIndex;
       }
       if (!this.player.spaceDown && this.spaceWasDown) {
         if (this.power > 15) {
@@ -70,7 +76,10 @@ export class Cannon extends Polygon {
         this.power = 0;
       }
       this.secondaryInteractWasTrue = this.player.secondaryInteracting;
-      this.player = undefined;
+      if (!this.player.interacting) {
+        this.player = undefined;
+        this.controlled = false;
+      }
     }
     else {
       this.secondaryInteractWasTrue = false;
@@ -102,16 +111,22 @@ export class Cannon extends Polygon {
     }
 
   }
-  //same but without other size
-  checkPlayerWithinRect(other: Player) {
-    const realPos = new Vector(this.pos.x + this.points[0].x, this.pos.y + this.points[0].y);
-    if (!(realPos.x > other.pos.x + this.size || realPos.x < other.pos.x - this.size || realPos.y > other.pos.y + this.size || realPos.y < other.pos.y - this.size)) {
+  checkPlayerWithinRect(other: Player, extraSpace = 0) {
+    if (this.checkPointWithinRect(other.hitBox, extraSpace)) {
       if (!this.controlled && other.interacting) {
         this.player = other;
         this.controlled = true;
         other.isInteracting = true;
+        console.log("poop");
+
       }
     }
+  }
+  checkPointWithinRect(other: Polygon, extraSpace = 0) {
+    const realPos = new Vector(this.pos.x + this.points[0].x, this.pos.y + this.points[0].y);
+    if (realPos.x > other.pos.x + this.size + extraSpace || realPos.x < other.pos.x - this.size - extraSpace || realPos.y > other.pos.y + this.size + extraSpace || realPos.y < other.pos.y - this.size - extraSpace)
+      return false;
+    return true;
   }
   doRotate(angle: number, cosVal?: number | undefined, sinVal?: number | undefined) {
     super.rotate(angle, cosVal, sinVal);
@@ -132,6 +147,7 @@ export class Cannon extends Polygon {
       points: this.barrel.points.map(point => point.serializeForUpdates()),
       power: this.power,
       munitionIndex: this.munitionIndex,
+
       playerID: this.playerID,
     } as cannonUpdate;
   }

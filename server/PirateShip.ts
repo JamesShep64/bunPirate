@@ -18,6 +18,7 @@ export class PirateShip {
   displace: Vector;
   friction: Vector;
   forward: Vector;
+  realForward: Vector;
   bodyPoly: Polygon;
   collisionZerosPolygon: Polygon;
   damagePoly: Polygon;
@@ -43,6 +44,7 @@ export class PirateShip {
   grapple: Grapple | undefined;
   munitions: Munitions = new Munitions();
   accelerator: Accelerator;
+  orbitMult: number = 1;
   constructor(id: string, x: number, y: number) {
     this.id = id;
     this.pos = new Vector(x, y);
@@ -52,6 +54,7 @@ export class PirateShip {
     this.displace = new Vector(0, 0);
     this.friction = new Vector(0, 0);
     this.forward = new Vector(1, 0);
+    this.realForward = new Vector(1, 0);
     this.turn = 1;
     this.players = {};
     this.blocks = {};
@@ -92,12 +95,16 @@ export class PirateShip {
       }
     }
         */
+    this.forward.set(this.bodyPoly.points[1].x - this.bodyPoly.points[0].x, this.bodyPoly.points[1].y - this.bodyPoly.points[0].y);
+    this.realForward.setVec(this.forward);
+    this.realForward.unitMultiply(this.turn);
+
     this.getTorque();
     this.applyTorque();
-    this.forward.set(this.bodyPoly.points[1].x - this.bodyPoly.points[0].x, this.bodyPoly.points[1].y - this.bodyPoly.points[0].y);
     this.orbit();
     if (!this.freeze)
-      this.physicsObject.addVelocity(this.forward.unitMultiplyReturn(this.turn * .007 * this.rollingVelocityMult));
+      this.physicsObject.addVelocity(this.realForward.unitMultiplyReturn(.007 * this.rollingVelocityMult * this.orbitMult));
+    this.orbitMult = 1;
     this.bodyPoly.update();
     this.physicsObject.update();
     this.checkPlayersWithin();
@@ -115,17 +122,19 @@ export class PirateShip {
     this.acceleratorCollisions();
     this.topPortCannon.update();
     this.rollingAverage.update();
+    this.accelerator.update();
     putInGrid(this.pos, this);
   }
   orbit() {
     if (this.grapple?.grappled) {
+      this.orbitMult = 1.3;
       const grapVec = this.grapple.pos.subtractReturn(this.pos);
-      const angle = Math.acos(grapVec.dot(this.forward) / (grapVec.magnatude() * this.forward.magnatude()));
+      const angle = Math.acos(grapVec.dot(this.realForward) / (grapVec.magnatude() * this.realForward.magnatude()));
       if (angle < .4 * Math.PI || angle > .9 * Math.PI) {
         game.deleteGrapple(this.grapple);
         return;
       }
-      this.rotate(-.03 * (angle - Math.PI * .4), true);
+      this.rotate(-.03 * (angle - Math.PI * .4) * this.turn, true);
 
     }
 
@@ -198,7 +207,7 @@ export class PirateShip {
   }
   acceleratorCollisions() {
     Object.values(this.players).forEach(player => {
-      this.accelerator.playerInteract(player);
+      this.accelerator.checkPlayerWithinRect(player);
     });
   }
   addDisplacement(vec: Vector) {

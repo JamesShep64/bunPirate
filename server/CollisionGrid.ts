@@ -18,6 +18,7 @@ export class CollisionSection {
   cannonBalls: { [key: string]: CannonBall };
   grapples: { [key: string]: Grapple };
   explosions: { [key: string]: Explosion };
+  mergedGrids: { [key: string]: CollisionSection };
   constructor() {
     this.players = {};
     this.blocks = {};
@@ -27,6 +28,7 @@ export class CollisionSection {
     this.cannonBalls = {};
     this.grapples = {};
     this.explosions = {};
+    this.mergedGrids = {};
   }
   clear() {
     this.players = {};

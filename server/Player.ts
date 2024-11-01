@@ -22,7 +22,6 @@ export class Player extends Controllable {
   secondaryInteracting: boolean;
   spaceDown: boolean;
   gotExploded: boolean = false;
-  munitionIndex: number = 0;
   munitions: string[] = [];
   onCannon: boolean = false;
   shipAboard: PirateShip | undefined;

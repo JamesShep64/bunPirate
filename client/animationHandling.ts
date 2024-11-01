@@ -30,6 +30,8 @@ export function animatePlayers(mePlayer: playerUpdate | undefined, otherPlayers:
 const meteors: { [key: string]: MeteorAnimated } = {};
 export function animateMeteors(updateMeteors: objectUpdate[]) {
   const meteorsAnimated: MeteorAnimated[] = [];
+  if (!updateMeteors)
+    return;
   updateMeteors.forEach(met => {
     if (met) {
       if (Object.keys(meteors).indexOf(met.id) == -1)
@@ -159,13 +161,13 @@ export class PlayerAnimation {
     this.hair1Angle.tick = .005;
     this.hair1Angle.bounceOnMax = true;
     this.hair1Angle.bounceOnMin = true;
-    this.hair1Angle.max = this.hairMax + this.player.netVelocity.x * .15;
-    this.hair1Angle.min = this.hairMin + this.player.netVelocity.x * .15;
+    this.hair1Angle.max = this.hairMax + this.player.netVelocity.x * .1;
+    this.hair1Angle.min = this.hairMin + this.player.netVelocity.x * .1;
     this.hair2Angle.tick = -.004;
     this.hair2Angle.bounceOnMax = true;
     this.hair2Angle.bounceOnMin = true;
-    this.hair2Angle.max = this.hairMax + this.player.netVelocity.x * .15;
-    this.hair2Angle.min = this.hairMin + this.player.netVelocity.x * .15;
+    this.hair2Angle.max = this.hairMax + this.player.netVelocity.x * .1;
+    this.hair2Angle.min = this.hairMin + this.player.netVelocity.x * .1;
     this.hair1Angle.rest = false;
     this.hair2Angle.rest = false;
   }
