@@ -74,9 +74,8 @@ export interface objectUpdate {
 	id: string;
 	x: number;
 	y: number;
-	direction: number;
 }
-export interface planetUpdate extends polyUpdate {
+export interface planetUpdate extends objectUpdate {
 
 }
 export interface expolsionUpdate extends objectUpdate {
@@ -84,14 +83,12 @@ export interface expolsionUpdate extends objectUpdate {
 }
 export interface polyUpdate extends objectUpdate {
 	points: vectorUpdate[];
+	direction: number;
 }
 export interface acceleratorUpdate extends objectUpdate {
 	selected: number;
 }
-export interface shipUpdate extends objectUpdate {
-	points: vectorUpdate[];
-	zeroPoints: vectorUpdate[];
-	missingZeros: number[];
+export interface shipUpdate extends polyUpdate {
 	masses: polyUpdate[];
 	ladder: vectorUpdate[];
 	mast: vectorUpdate[];
@@ -112,7 +109,6 @@ export interface godUpdate extends objectUpdate {
 	placeY: number;
 }
 export interface playerUpdate extends objectUpdate {
-	points: vectorUpdate[];
 	colorR: number;
 	colorG: number;
 	colorB: number;

@@ -72,7 +72,7 @@ const serverInstance = Bun.serve<{ authToken: string; }>({
 });
 export function sendMessage(id: string | undefined, message: Message) {
   if (typeof id == "string")
-    SocketHandling.socketIdPairs[id].send(JSON.stringify(message));
+    SocketHandling.socketIdPairs[id].send(JSON.stringify(message), true);
 }
 function setPayLoadFunctionPairs() {
   //this is to responed to the user joining the game

@@ -17,7 +17,6 @@ export class Planet extends Polygon {
       id: this.id,
       x: this.pos.x,
       y: this.pos.y,
-      points: this.points.map(point => point.serializeForUpdates()),
     }
   }
 }
